@@ -1,8 +1,8 @@
 
 
 import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_JOURNALS } from '../constants';
-import { fetchJournalCategories } from '../services/api';
+import { MOCK_JOURNALS } from '../constants'; // Fallback
+import { fetchJournalCategories, fetchJournals } from '../services/api';
 import { FileText, User, GraduationCap, Star, Download, Layers, BookOpen, Trophy, Tag, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel, JournalItem } from '../types';
@@ -15,26 +15,34 @@ const Journals: React.FC = () => {
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [categories, setCategories] = useState<string[]>(['Semua']);
+  const [journals, setJournals] = useState<JournalItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchJournalCategories();
-        setCategories(data);
+        const [catsData, journalsData] = await Promise.all([
+          fetchJournalCategories(),
+          fetchJournals()
+        ]);
+        setCategories(catsData);
+        setJournals(journalsData);
       } catch (error) {
-        console.error('Error loading journal categories:', error);
+        console.error('Error loading data:', error);
       } finally {
         setCatLoading(false);
+        setLoading(false);
       }
     };
-    loadCategories();
+    loadData();
   }, []);
 
   const effectiveLevelFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
+  // Unused helper function but updating for consistency if needed in future
   const getBestByLevel = (level: EducationLevel): JournalItem | undefined => {
-    const levelJournals = MOCK_JOURNALS.filter(j => j.jenjang === level);
+    const levelJournals = journals.filter(j => j.jenjang === level);
     if (levelJournals.length === 0) return undefined;
     const best = levelJournals.find(j => j.isBest);
     return best || [...levelJournals].sort((a, b) => b.score - a.score)[0];
@@ -46,7 +54,7 @@ const Journals: React.FC = () => {
     return ['SEMUA', ...levels] as (EducationLevel | 'SEMUA')[];
   }, [LEVEL_CONFIG]);
 
-  const filteredJournals = MOCK_JOURNALS.filter(journal => {
+  const filteredJournals = journals.filter(journal => {
     const matchesLevel = effectiveLevelFilter === 'SEMUA' || journal.jenjang === effectiveLevelFilter;
     const matchesCategory = activeCategory === 'Semua' || journal.category === activeCategory;
     return matchesLevel && matchesCategory;
@@ -182,7 +190,12 @@ const Journals: React.FC = () => {
 
         {/* List Jurnal */}
         <div className="flex-1">
-          {filteredJournals.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-6"></div>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Memuat jurnal...</p>
+            </div>
+          ) : filteredJournals.length > 0 ? (
             <div className="space-y-10">
               {filteredJournals.map(journal => (
                 <JournalCard key={journal.id} journal={journal} />

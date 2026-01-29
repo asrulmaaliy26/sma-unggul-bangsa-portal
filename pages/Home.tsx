@@ -1,12 +1,11 @@
-
 import React, { useContext, useEffect, useState } from 'react';
 import Carousel from '../components/Carousel';
-import { MOCK_JOURNALS } from '../constants';
+import { MOCK_JOURNALS } from '../constants'; // Fallback
 import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap, Building, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
-import { Slide, Stat, NewsItem } from '../types';
-import { fetchHomeData, fetchNews } from '../services/api';
+import { Slide, Stat, NewsItem, JournalItem } from '../types';
+import { fetchHomeData, fetchNews, fetchJournals } from '../services/api';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Home: React.FC = () => {
@@ -16,18 +15,21 @@ const Home: React.FC = () => {
   const [allStats, setAllStats] = useState<Record<string, Stat[]>>({});
   const [slides, setSlides] = useState<Slide[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [journals, setJournals] = useState<JournalItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const [homeData, newsData] = await Promise.all([
+        const [homeData, newsData, journalsData] = await Promise.all([
           fetchHomeData(),
-          fetchNews()
+          fetchNews(),
+          fetchJournals()
         ]);
         setAllStats(homeData.stats);
         setSlides(homeData.slides);
         setNews(newsData);
+        setJournals(journalsData);
       } catch (error) {
         console.error('Error loading home data:', error);
       } finally {
@@ -40,7 +42,7 @@ const Home: React.FC = () => {
   // Filtering data berdasarkan level
   const newsList = activeLevel === 'UMUM' ? news : news.filter(n => n.jenjang === activeLevel);
   // const projectList = activeLevel === 'UMUM' ? MOCK_PROJECTS : MOCK_PROJECTS.filter(p => p.jenjang === activeLevel);
-  const journalList = activeLevel === 'UMUM' ? MOCK_JOURNALS : MOCK_JOURNALS.filter(j => j.jenjang === activeLevel);
+  const journalList = activeLevel === 'UMUM' ? journals : journals.filter(j => j.jenjang === activeLevel);
 
   // Logic untuk memilih stats berdasarkan activeLevel
   const currentStats = React.useMemo(() => {

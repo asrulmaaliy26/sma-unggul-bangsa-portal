@@ -1,21 +1,38 @@
 
-import React, { useState, useContext } from 'react';
-import { MOCK_FACILITIES, SCHOOL_NAME } from '../constants';
+import React, { useState, useContext, useEffect } from 'react';
+import { MOCK_FACILITIES, SCHOOL_NAME } from '../constants'; // Fallback
+import { fetchFacilities } from '../services/api';
 import { Layout, Zap, Layers, MapPin, ChevronRight, Search } from 'lucide-react';
 import { LevelContext } from '../App';
-import { EducationLevel } from '../types';
+import { EducationLevel, Facility } from '../types';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Facilities: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const theme = LEVEL_CONFIG[activeLevel];
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchFacilities();
+        setFacilities(data);
+      } catch (error) {
+        console.error('Error loading facilities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
   const effectiveJenjangFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
-  const filtered = MOCK_FACILITIES.filter(f => {
+  const filtered = facilities.filter(f => {
     const matchesJenjang = effectiveJenjangFilter === 'SEMUA' || f.jenjang === effectiveJenjangFilter;
     return matchesJenjang;
   });
@@ -67,7 +84,12 @@ const Facilities: React.FC = () => {
 
         {/* Galeri Fasilitas */}
         <div className="flex-1">
-          {filtered.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-6"></div>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Memuat fasilitas...</p>
+            </div>
+          ) : filtered.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {filtered.map(facility => {
                 const facilityTheme = LEVEL_CONFIG[facility.jenjang];
