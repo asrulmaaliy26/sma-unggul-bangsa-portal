@@ -1,6 +1,7 @@
 
-import React, { useState, useContext } from 'react';
-import { MOCK_JOURNALS, LEVEL_CONFIG, JOURNAL_CATEGORIES } from '../constants';
+import React, { useState, useContext, useEffect } from 'react';
+import { MOCK_JOURNALS, LEVEL_CONFIG } from '../constants';
+import { fetchCategories } from '../services/api';
 import { FileText, User, GraduationCap, Star, Download, Layers, BookOpen, Trophy, Tag, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel, JournalItem } from '../types';
@@ -10,6 +11,22 @@ const Journals: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
+  const [categories, setCategories] = useState<string[]>(['Semua']);
+  const [catLoading, setCatLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(data.journal_categories);
+      } catch (error) {
+        console.error('Error loading journal categories:', error);
+      } finally {
+        setCatLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const effectiveLevelFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
@@ -29,7 +46,7 @@ const Journals: React.FC = () => {
     return matchesLevel && matchesCategory;
   });
 
-  const JournalCard = ({ journal }: { journal: JournalItem }) => {
+  const JournalCard = ({ journal }: { journal: JournalItem, key?: any }) => {
     const journalTheme = LEVEL_CONFIG[journal.jenjang];
     return (
       <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 group">
@@ -62,15 +79,15 @@ const Journals: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className={`w-11 h-11 rounded-2xl ${journalTheme.bg} text-white flex items-center justify-center shadow-lg shadow-black/5`}><User className="w-5 h-5" /></div>
                 <div>
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Peneliti</p>
-                   <p className="font-black text-slate-900 text-xs">{journal.author}</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Peneliti</p>
+                  <p className="font-black text-slate-900 text-xs">{journal.author}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center"><GraduationCap className="w-5 h-5" /></div>
                 <div>
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mentor</p>
-                   <p className="font-bold text-slate-600 text-xs">{journal.mentor}</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mentor</p>
+                  <p className="font-bold text-slate-600 text-xs">{journal.mentor}</p>
                 </div>
               </div>
             </div>
@@ -110,23 +127,22 @@ const Journals: React.FC = () => {
         <aside className="lg:w-72 flex-shrink-0 space-y-8">
           {activeLevel === 'UMUM' && (
             <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
-               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                 <Layers className="w-3 h-3" /> Jenjang Institusi
-               </h3>
-               <div className="space-y-1">
-                 {filterOptions.map((opt) => (
-                   <button
-                     key={opt}
-                     onClick={() => setSubFilter(opt)}
-                     className={`w-full text-left px-4 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${
-                       subFilter === opt ? 'bg-islamic-green-700 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
-                     }`}
-                   >
-                     {opt}
-                     {subFilter === opt && <ChevronRight className="w-3 h-3" />}
-                   </button>
-                 ))}
-               </div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Layers className="w-3 h-3" /> Jenjang Institusi
+              </h3>
+              <div className="space-y-1">
+                {filterOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setSubFilter(opt)}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-islamic-green-700 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                  >
+                    {opt}
+                    {subFilter === opt && <ChevronRight className="w-3 h-3" />}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -135,20 +151,25 @@ const Journals: React.FC = () => {
               <Tag className="w-3 h-3" /> Bidang Kajian
             </h3>
             <div className="space-y-2">
-              {JOURNAL_CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${
-                    activeCategory === cat 
-                      ? 'bg-islamic-green-800 text-white border-transparent shadow-2xl shadow-islamic-green-100' 
+              {catLoading ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-islamic-green-800"></div>
+                </div>
+              ) : (
+                categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${activeCategory === cat
+                      ? 'bg-islamic-green-800 text-white border-transparent shadow-2xl shadow-islamic-green-100'
                       : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-100'
-                  }`}
-                >
-                  {cat}
-                  {activeCategory === cat && <BookOpen className="w-4 h-4" />}
-                </button>
-              ))}
+                      }`}
+                  >
+                    {cat}
+                    {activeCategory === cat && <BookOpen className="w-4 h-4" />}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </aside>
@@ -165,7 +186,7 @@ const Journals: React.FC = () => {
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
               <FileText className="w-16 h-16 text-slate-200 mx-auto mb-6" />
               <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Jurnal tidak ditemukan</p>
-              <button onClick={() => {setActiveCategory('Semua'); setSubFilter('SEMUA');}} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Filter</button>
+              <button onClick={() => { setActiveCategory('Semua'); setSubFilter('SEMUA'); }} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Filter</button>
             </div>
           )}
         </div>

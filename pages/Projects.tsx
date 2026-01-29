@@ -1,6 +1,7 @@
 
-import React, { useState, useContext } from 'react';
-import { MOCK_PROJECTS, LEVEL_CONFIG, SCHOOL_NAME, PROJECT_CATEGORIES } from '../constants';
+import React, { useState, useContext, useEffect } from 'react';
+import { MOCK_PROJECTS, LEVEL_CONFIG, SCHOOL_NAME } from '../constants';
+import { fetchCategories } from '../services/api';
 import { ArrowUpRight, Layers, Tag, LayoutGrid, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel } from '../types';
@@ -10,7 +11,23 @@ const Projects: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
+  const [categories, setCategories] = useState<string[]>(['Semua']);
+  const [catLoading, setCatLoading] = useState(true);
   const theme = LEVEL_CONFIG[activeLevel];
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(data.project_categories);
+      } catch (error) {
+        console.error('Error loading project categories:', error);
+      } finally {
+        setCatLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const effectiveLevelFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
@@ -66,19 +83,25 @@ const Projects: React.FC = () => {
               <Tag className="w-3 h-3" /> Kategori Bidang
             </h3>
             <div className="space-y-2">
-              {PROJECT_CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${activeCategory === cat
+              {catLoading ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-900"></div>
+                </div>
+              ) : (
+                categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${activeCategory === cat
                       ? 'bg-islamic-gold-500 text-white border-transparent shadow-xl shadow-islamic-gold-100'
                       : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-100'
-                    }`}
-                >
-                  {cat}
-                  {activeCategory === cat && <LayoutGrid className="w-4 h-4" />}
-                </button>
-              ))}
+                      }`}
+                  >
+                    {cat}
+                    {activeCategory === cat && <LayoutGrid className="w-4 h-4" />}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </aside>

@@ -73,3 +73,9 @@ export interface HomeData {
   stats: Stat[];
   slides: Slide[];
 }
+
+export interface CategoryData {
+  project_categories: string[];
+  journal_categories: string[];
+  news_categories: string[];
+}

@@ -1,6 +1,7 @@
 
-import React, { useState, useContext } from 'react';
-import { MOCK_NEWS, LEVEL_CONFIG, NEWS_CATEGORIES } from '../constants';
+import React, { useState, useContext, useEffect } from 'react';
+import { MOCK_NEWS, LEVEL_CONFIG } from '../constants';
+import { fetchCategories } from '../services/api';
 import { Search, Eye, Calendar, TrendingUp, Filter, Check } from 'lucide-react';
 import { LevelContext } from '../App';
 import { Link } from 'react-router-dom';
@@ -8,7 +9,23 @@ import { Link } from 'react-router-dom';
 const News: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
+  const [categories, setCategories] = useState<string[]>(['Semua']);
+  const [catLoading, setCatLoading] = useState(true);
   const { activeLevel } = useContext(LevelContext);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(data.news_categories);
+      } catch (error) {
+        console.error('Error loading news categories:', error);
+      } finally {
+        setCatLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const filteredNews = MOCK_NEWS.filter(n => {
     const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,18 +77,22 @@ const News: React.FC = () => {
                   <Filter className="w-4 h-4" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Filter:</span>
                 </div>
-                {NEWS_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-6 py-2.5 rounded-full text-xs font-black transition-all duration-300 border ${activeCategory === cat
-                      ? `${theme.bg} text-white border-transparent shadow-lg shadow-black/5`
-                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
-                      }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+                {catLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-900 mx-4"></div>
+                ) : (
+                  categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-6 py-2.5 rounded-full text-xs font-black transition-all duration-300 border ${activeCategory === cat
+                        ? `${theme.bg} text-white border-transparent shadow-lg shadow-black/5`
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                        }`}
+                    >
+                      {cat}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </header>
