@@ -89,3 +89,14 @@ export interface LevelConfigItem {
 }
 
 export type LevelConfigData = Record<EducationLevel, LevelConfigItem>;
+
+export interface AboutData {
+  history: string;
+  visi: string;
+  misi: string[];
+  struktur: {
+    pimpinan: string;
+    nama: string;
+    staff: Array<{ role: string; name: string }>;
+  };
+}

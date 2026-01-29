@@ -6,23 +6,7 @@ import { NewsItem, ProjectItem, JournalItem, Achievement, Facility, EducationLev
 
 export const SCHOOL_NAME = "Lembaga Pendidikan Islam Al Hidayah";
 
-export const ABOUT_CONTENT: Record<EducationLevel, any> = {
-  'UMUM': {
-    history: "Yayasan Unggul Bangsa didirikan pada tahun 1990 dengan cita-cita besar untuk membangun ekosistem pendidikan yang mengintegrasikan kecerdasan intelektual dengan nilai-nilai luhur Al-Qur'an.",
-    visi: "Menjadi pusat keunggulan peradaban Islam di Indonesia melalui pendidikan terpadu yang berkualitas dan inklusif.",
-    misi: ["Mengelola lembaga pendidikan yang profesional dan akuntabel.", "Menyediakan fasilitas modern.", "Mencetak kader pemimpin berkarakter Qurani."],
-    struktur: { pimpinan: "Ketua Dewan Pembina", nama: "Prof. Dr. KH. Abdul Fattah", staff: [{ role: "Sekretaris", name: "Hj. Siti Aminah" }, { role: "Bendahara", name: "H. Ridwan Hakim" }] }
-  },
-  'SMA': {
-    history: "SMA Unggul Bangsa didirikan sebagai sekolah model yang mengedepankan riset teknologi dan tahfidz Quran.",
-    visi: "Terwujudnya cendekiawan muslim yang inovatif, kompetitif secara global, dan hafidz Quran.",
-    misi: ["Pembelajaran STEM berbasis nilai Islam.", "Hafalan minimal 5 Juz.", "Potensi kepemimpinan."],
-    struktur: { pimpinan: "Kepala Sekolah", nama: "Dr. Ahmad Wijaya, M.Pd", staff: [{ role: "Wakasek Kurikulum", name: "Ibu Siti Zulaikha" }] }
-  },
-  'MI': { history: "MI Unggul Bangsa berfokus pada karakter dasar anak.", visi: "Membentuk anak sholeh yang cerdas.", misi: ["Ibadah harian.", "Baca tulis Quran."], struktur: { pimpinan: "Kepala Madrasah", nama: "Hj. Mariam Ulfa", staff: [] } },
-  'SMP': { history: "SMP Unggul Bangsa adalah masa transisi krusial.", visi: "Unggul prestasi dan budi pekerti.", misi: ["Bahasa Arab & Inggris.", "Minat riset."], struktur: { pimpinan: "Kepala Sekolah", nama: "Bpk. Suryadi, M.Pd", staff: [] } },
-  'KAMPUS': { history: "STAI Unggul Bangsa melahirkan intelektual muslim.", visi: "Pusat riset ekonomi syariah.", misi: ["Pendidikan tinggi berkualitas.", "Pengabdian masyarakat."], struktur: { pimpinan: "Ketua STAI", nama: "Dr. Zainal Arifin", staff: [] } }
-};
+// ABOUT_CONTENT migrated to API /about/{jenjang}
 
 export const MOCK_NEWS: NewsItem[] = [
   { id: '1', title: 'Siswa SMA Menangkan Olimpiade Sains Nasional 2024', excerpt: 'Prestasi membanggakan kembali diraih...', content: '...', date: '24 Mei 2024', views: 1250, imageUrl: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d', category: 'Prestasi', level: 'Nasional', jenjang: 'SMA' },

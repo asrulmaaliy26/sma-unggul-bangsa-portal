@@ -1,7 +1,9 @@
 
 import React, { useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ABOUT_CONTENT, MOCK_NEWS } from '../constants';
+import { MOCK_NEWS } from '../constants';
+import { fetchAboutData } from '../services/api';
+import { AboutData } from '../types';
 import { Target, Flag, Award, ShieldCheck, Heart, Star, BookOpen, GraduationCap, Calendar, Users, Building } from 'lucide-react';
 import { LevelContext } from '../App';
 import { useLevelConfig } from '../hooks/useLevelConfig';
@@ -10,9 +12,27 @@ const About: React.FC = () => {
   const { section } = useParams<{ section: string }>();
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
+  const [aboutData, setAboutData] = React.useState<AboutData | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchAboutData(activeLevel);
+        setAboutData(data);
+      } catch (error) {
+        console.error("Failed to load about data", error);
+        // Fallback or empty state could be handled here
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [activeLevel]);
 
   const theme = LEVEL_CONFIG[activeLevel];
-  const content = ABOUT_CONTENT[activeLevel];
+  const content = aboutData;
 
   const isYayasan = activeLevel === 'UMUM';
 
@@ -188,6 +208,14 @@ const About: React.FC = () => {
       default: return renderProfil();
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-300"></div>
+      </div>
+    );
+  }
 
   const getTitle = () => {
     const context = isYayasan ? 'Yayasan' : activeLevel;

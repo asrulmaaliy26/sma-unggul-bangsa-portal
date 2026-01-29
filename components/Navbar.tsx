@@ -17,7 +17,15 @@ const Navbar: React.FC = () => {
 
   const currentTheme = LEVEL_CONFIG[activeLevel];
 
-  const levels: EducationLevel[] = ['UMUM', 'MI', 'SMP', 'SMA', 'KAMPUS'];
+  const levels = React.useMemo(() => {
+    const keys = Object.keys(LEVEL_CONFIG) as EducationLevel[];
+    const umumIndex = keys.indexOf('UMUM');
+    if (umumIndex > -1) {
+      keys.splice(umumIndex, 1);
+      keys.unshift('UMUM');
+    }
+    return keys;
+  }, [LEVEL_CONFIG]);
 
   const navLinks = [
     { name: 'Home', path: '/' },

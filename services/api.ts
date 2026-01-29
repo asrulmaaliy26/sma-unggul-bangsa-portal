@@ -1,4 +1,4 @@
-import { HomeData, CategoryData, LevelConfigData } from '../types';
+import { HomeData, CategoryData, LevelConfigData, AboutData } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -39,4 +39,13 @@ export const fetchLevelConfig = async (): Promise<LevelConfigData> => {
         throw new Error('Failed to fetch level config');
     }
     return response.json();
+};
+
+export const fetchAboutData = async (jenjang: string): Promise<AboutData> => {
+    const response = await fetch(`${API_BASE_URL}/about/${jenjang.toLowerCase()}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch about data');
+    }
+    const json = await response.json();
+    return json.data;
 };
