@@ -102,7 +102,11 @@ const News: React.FC = () => {
 
           <div className="space-y-10">
             {filteredNews.length > 0 ? filteredNews.map(news => {
-              const newsTheme = LEVEL_CONFIG[news.jenjang];
+              // const newsTheme = LEVEL_CONFIG[news.jenjang];
+              const newsTheme =
+                news.jenjang === 'SMA'
+                  ? LEVEL_CONFIG['MA']
+                  : LEVEL_CONFIG[news.jenjang];
               return (
                 <article key={news.id} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-slate-100 flex flex-col sm:flex-row group">
                   <div className="sm:w-2/5 h-64 sm:h-auto overflow-hidden relative">
@@ -153,6 +157,7 @@ const News: React.FC = () => {
         </div>
 
         {/* Sidebar */}
+
         <aside className="md:w-1/3">
           <div className="sticky top-28 space-y-10">
             <div className="bg-white p-12 rounded-[3.5rem] shadow-sm border border-slate-100">
