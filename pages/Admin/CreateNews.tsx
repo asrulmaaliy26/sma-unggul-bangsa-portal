@@ -18,6 +18,7 @@ import {
   Layers
 } from 'lucide-react';
 import { generateNewsArticle } from '../../services/gemini';
+import { createNews } from '../../services/api';
 import { EducationLevel } from '../../types';
 import { LevelContext } from '../../App';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
@@ -27,15 +28,17 @@ const CreateNews: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [briefSketch, setBriefSketch] = useState('');
 
   const [title, setTitle] = useState('');
+  const [excerpt, setExcerpt] = useState('');
   const [category, setCategory] = useState<'Akademik' | 'Kegiatan' | 'Pengumuman' | 'Prestasi'>('Kegiatan');
   const [level, setLevel] = useState<'Nasional' | 'Internasional' | 'Provinsi'>('Nasional');
   const [jenjang, setJenjang] = useState<EducationLevel>(activeLevel === 'UMUM' ? 'SMA' : activeLevel);
-  const [imageUrl, setImageUrl] = useState('');
   const [content, setContent] = useState('');
-  const [attachments, setAttachments] = useState<string[]>([]);
+  const [mainImage, setMainImage] = useState<File | null>(null);
+  const [gallery, setGallery] = useState<File[]>([]);
 
   const handleSmartAIWrite = async () => {
     if (!briefSketch.trim()) {
@@ -51,6 +54,11 @@ const CreateNews: React.FC = () => {
         const titleSuggest = result.split('\n')[0].substring(0, 100).replace(/judul[:\s]*/i, '');
         setTitle(titleSuggest || title);
       }
+      // Generate excerpt from first 150 characters of content
+      if (!excerpt) {
+        const excerptText = result.substring(0, 150).replace(/\n/g, ' ') + '...';
+        setExcerpt(excerptText);
+      }
     } catch (error) {
       alert("Maaf, AI gagal menghasilkan berita. Silakan coba lagi.");
     } finally {
@@ -58,18 +66,74 @@ const CreateNews: React.FC = () => {
     }
   };
 
-  const addAttachment = () => setAttachments([...attachments, '']);
-  const removeAttachment = (index: number) => setAttachments(attachments.filter((_, i) => i !== index));
-  const updateAttachment = (index: number, val: string) => {
-    const newArr = [...attachments];
-    newArr[index] = val;
-    setAttachments(newArr);
+  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setMainImage(e.target.files[0]);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleGalleryChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const newGallery = [...gallery];
+      newGallery[index] = e.target.files[0];
+      setGallery(newGallery);
+    }
+  };
+
+  const addGalleryField = () => {
+    // Add a placeholder - will be filled when user selects file
+    setGallery([...gallery, null as any]);
+  };
+
+  const removeGalleryField = (index: number) => {
+    const newGallery = gallery.filter((_, i) => i !== index);
+    setGallery(newGallery);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Berita berhasil disimpan! (Mock)");
-    navigate('/admin/news');
+
+    // Validation
+    if (!title.trim()) {
+      alert('Judul harus diisi');
+      return;
+    }
+    if (!excerpt.trim()) {
+      alert('Ringkasan harus diisi');
+      return;
+    }
+    if (!content.trim()) {
+      alert('Konten harus diisi');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Filter out null/empty gallery items
+      const validGallery = gallery.filter(file => file !== null && file !== undefined);
+
+      const response = await createNews({
+        title,
+        excerpt,
+        content,
+        date: today,
+        category,
+        jenjang,
+        level: category === 'Prestasi' ? level : undefined,
+        main_image: mainImage || undefined,
+        gallery: validGallery.length > 0 ? validGallery : undefined,
+      });
+
+      alert(response.message || 'Berita berhasil ditambahkan!');
+      navigate('/admin/news');
+    } catch (error: any) {
+      alert(error.message || 'Gagal menyimpan berita');
+      console.error('Error creating news:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,9 +150,18 @@ const CreateNews: React.FC = () => {
         </div>
         <button
           onClick={handleSubmit}
-          className="flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all shadow-xl shadow-black/10"
+          disabled={isSubmitting}
+          className="flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all shadow-xl shadow-black/10 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Save className="w-5 h-5 text-islamic-gold-500" /> Simpan Publikasi
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-5 h-5 text-islamic-gold-500 animate-spin" /> Menyimpan...
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5 text-islamic-gold-500" /> Simpan Publikasi
+            </>
+          )}
         </button>
       </header>
 
@@ -107,6 +180,19 @@ const CreateNews: React.FC = () => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                  <AlignLeft className="w-4 h-4 text-slate-400" /> Ringkasan Singkat
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-slate-900 font-medium text-slate-700"
+                  placeholder="Ringkasan berita dalam 1-2 kalimat..."
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                ></textarea>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -145,70 +231,80 @@ const CreateNews: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {category === 'Prestasi' && (
-                  <div>
-                    <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                      <Trophy className="w-4 h-4 text-islamic-gold-500" /> Tingkat Prestasi
-                    </label>
-                    <select
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
-                      value={level}
-                      onChange={(e) => setLevel(e.target.value as any)}
-                    >
-                      <option value="Nasional">Nasional</option>
-                      <option value="Internasional">Internasional</option>
-                      <option value="Provinsi">Provinsi</option>
-                    </select>
-                  </div>
-                )}
+              {category === 'Prestasi' && (
                 <div>
                   <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                    <ImageIcon className="w-4 h-4" /> URL Gambar Utama
+                    <Trophy className="w-4 h-4 text-islamic-gold-500" /> Tingkat Prestasi
                   </label>
-                  <input
-                    type="text"
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none"
-                    placeholder="https://images.unsplash.com/..."
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                  />
+                  <select
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
+                    value={level}
+                    onChange={(e) => setLevel(e.target.value as any)}
+                  >
+                    <option value="Nasional">Nasional</option>
+                    <option value="Internasional">Internasional</option>
+                    <option value="Provinsi">Provinsi</option>
+                  </select>
                 </div>
+              )}
+
+              <div>
+                <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                  <ImageIcon className="w-4 h-4" /> Gambar Utama
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800"
+                  onChange={handleMainImageChange}
+                />
+                {mainImage && (
+                  <p className="text-xs text-slate-500 mt-2">File: {mainImage.name}</p>
+                )}
               </div>
 
-              {/* Attachments Section */}
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest">
-                    <ImageIcon className="w-4 h-4" /> Galeri Lampiran
+                    <ImageIcon className="w-4 h-4" /> Galeri Foto
                   </label>
                   <button
                     type="button"
-                    onClick={addAttachment}
-                    className="text-xs font-black text-slate-900 flex items-center gap-1"
+                    onClick={addGalleryField}
+                    className="flex items-center gap-1 text-xs font-black text-slate-900 hover:text-islamic-gold-600 transition-colors"
                   >
-                    <Plus className="w-3 h-3" /> Tambah
+                    <Plus className="w-4 h-4" /> Tambah Foto
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {attachments.map((url, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        className="flex-1 px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs"
-                        placeholder="URL Gambar..."
-                        value={url}
-                        onChange={(e) => updateAttachment(index, e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                  {gallery.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic py-4 text-center bg-slate-50 rounded-xl border border-slate-100">
+                      Belum ada foto galeri. Klik "Tambah Foto" untuk menambahkan.
+                    </p>
+                  ) : (
+                    gallery.map((file, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800"
+                            onChange={(e) => handleGalleryChange(index, e)}
+                          />
+                          {file && (
+                            <p className="text-xs text-slate-500 mt-1 ml-1">📎 {file.name}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryField(index)}
+                          className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

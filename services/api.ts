@@ -190,3 +190,71 @@ export const fetchFacilityDetail = async (id: string): Promise<Facility> => {
     );
     return json.data;
 };
+
+/* ================= CREATE/UPDATE/DELETE ================= */
+
+export interface CreateNewsPayload {
+    title: string;
+    excerpt: string;
+    content: string;
+    date: string;
+    category: string;
+    jenjang: string;
+    level?: string;
+    main_image?: File;
+    gallery?: File[];
+}
+
+export interface CreateNewsResponse {
+    message: string;
+    data: NewsItem;
+}
+
+export const createNews = async (payload: CreateNewsPayload): Promise<CreateNewsResponse> => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append('title', payload.title);
+    formData.append('excerpt', payload.excerpt);
+    formData.append('content', payload.content);
+    formData.append('date', payload.date);
+    formData.append('category', payload.category);
+    formData.append('jenjang', payload.jenjang);
+
+    if (payload.level) {
+        formData.append('level', payload.level);
+    }
+
+    // Add main image
+    if (payload.main_image) {
+        formData.append('main_image', payload.main_image);
+    }
+
+    // Add gallery images
+    if (payload.gallery && payload.gallery.length > 0) {
+        payload.gallery.forEach((file) => {
+            formData.append('gallery[]', file);
+        });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/news`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - browser will set it automatically with boundary
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal membuat berita: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || `Gagal membuat berita: (${response.status})`
+        );
+    }
+
+    return data as CreateNewsResponse;
+};
