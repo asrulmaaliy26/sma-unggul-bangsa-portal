@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProjectDetail, fetchProjects } from '../services/api';
 import { ProjectItem } from '../types';
-import { ArrowLeft, ArrowRight, User, Calendar, Lightbulb, Zap, Rocket } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Calendar, Lightbulb, Zap, Rocket, FileText, Download } from 'lucide-react';
 
 const ProjectDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -96,6 +96,34 @@ const ProjectDetail: React.FC = () => {
                            <li>Kemudahan instalasi bagi pemula</li>
                         </ul>
                      </div>
+
+                     {project.documents && project.documents.length > 0 && (
+                        <div>
+                           <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                              <FileText className="w-5 h-5 text-blue-600" /> Dokumen Pendukung
+                           </h3>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {project.documents.map((doc, index) => (
+                                 <a
+                                    key={index}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-slate-100 transition-colors group"
+                                 >
+                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-red-500 font-black text-xs border border-slate-100">
+                                       {doc.format.toUpperCase()}
+                                    </div>
+                                    <div className="flex-1">
+                                       <p className="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition-colors line-clamp-1">{doc.title}</p>
+                                       <p className="text-xs text-slate-400 capitalize">{doc.type}</p>
+                                    </div>
+                                    <Download className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                                 </a>
+                              ))}
+                           </div>
+                        </div>
+                     )}
                   </div>
                </div>
             </div>

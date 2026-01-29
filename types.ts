@@ -8,23 +8,29 @@ export interface NewsItem {
   content: string;
   date: string;
   views: number;
-  imageUrl: string;
-  category: 'Akademik' | 'Kegiatan' | 'Pengumuman' | 'Prestasi';
-  level?: 'Nasional' | 'Internasional' | 'Provinsi';
-  attachments?: string[];
-  jenjang: EducationLevel;
+  main_image: string;
+  category: string;
+  education_level: EducationLevel;
+  gallery: string[];
+}
+
+export interface ProjectDocument {
+  type: string;
+  format: string;
+  title: string;
+  url: string;
 }
 
 export interface ProjectItem {
   id: string;
   title: string;
-  category: string; // Added category
+  category: string;
   description: string;
   author: string;
   date: string;
   imageUrl: string;
   jenjang: EducationLevel;
-  fileUrl?: string;
+  documents?: ProjectDocument[];
 }
 
 export interface JournalItem {
@@ -45,7 +51,7 @@ export interface Achievement {
   id: string;
   title: string;
   year: string;
-  level: 'Nasional' | 'Internasional' | 'Provinsi';
+  level: 'Sekolah' | 'Internasional' | 'Nasional' | 'Provinsi' | 'Kota' | 'Kabupaten' | 'Kecamatan';
   description: string;
   jenjang: EducationLevel;
 }

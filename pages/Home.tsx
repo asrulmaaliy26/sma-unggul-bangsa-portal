@@ -137,7 +137,7 @@ const Home: React.FC = () => {
             {newsList.slice(0, 3).map(news => (
               <Link to={`/berita/${news.id}`} key={news.id} className="bg-white rounded-[2.5rem] overflow-hidden hover:-translate-y-3 transition-all duration-500 group border border-white/5">
                 <div className="relative h-64 overflow-hidden">
-                  <img src={news.imageUrl} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img src={news.main_image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   <div className={`absolute top-6 left-6 ${theme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg`}>
                     {news.jenjang}
                   </div>

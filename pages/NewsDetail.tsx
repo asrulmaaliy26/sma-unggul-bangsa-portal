@@ -66,7 +66,7 @@ const NewsDetail: React.FC = () => {
                   <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-10 leading-[1.2]">{news.title}</h1>
 
                   <div className="relative mb-12 rounded-[2.5rem] overflow-hidden shadow-2xl group">
-                     <img src={news.imageUrl} alt={news.title} className="w-full h-[450px] object-cover group-hover:scale-105 transition-transform duration-1000" />
+                     <img src={news.main_image} alt={news.title} className="w-full h-[450px] object-cover group-hover:scale-105 transition-transform duration-1000" />
                      <div className="absolute inset-0 bg-gradient-to-t from-islamic-green-900/20 to-transparent"></div>
                   </div>
 
@@ -77,13 +77,13 @@ const NewsDetail: React.FC = () => {
                   </div>
 
                   {/* Gallery Attachments Section */}
-                  {news.attachments && news.attachments.length > 0 && (
+                  {news.gallery && news.gallery.length > 0 && (
                      <div className="mt-16 pt-10 border-t border-slate-100">
                         <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-2">
                            <ImageIcon className="w-5 h-5 text-islamic-gold-500" /> Lampiran Dokumentasi
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {news.attachments.map((url, idx) => (
+                           {news.gallery.map((url, idx) => (
                               <div key={idx} className="rounded-3xl overflow-hidden shadow-lg hover:scale-[1.02] transition-transform duration-500 cursor-zoom-in">
                                  <img src={url} alt={`Lampiran ${idx + 1}`} className="w-full h-64 object-cover" />
                               </div>
@@ -113,7 +113,7 @@ const NewsDetail: React.FC = () => {
                      {otherNews.map(item => (
                         <Link to={`/berita/${item.id}`} key={item.id} className="block group/item">
                            <div className="flex gap-5 items-center">
-                              <img src={item.imageUrl} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-white/10" alt={item.title} />
+                              <img src={item.main_image} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-white/10" alt={item.title} />
                               <div>
                                  <h4 className="font-bold text-sm line-clamp-2 group-hover/item:text-islamic-gold-500 transition-colors">{item.title}</h4>
                                  <p className="text-[10px] text-white/40 mt-2">{item.date}</p>

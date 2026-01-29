@@ -14,8 +14,33 @@ export const MOCK_NEWS: NewsItem[] = [
 ];
 
 export const MOCK_PROJECTS: ProjectItem[] = [
-  { id: 'p1', title: 'Irigasi IoT MA', category: 'Sains & Teknologi', description: 'Sistem irigasi otomatis berbasis IoT.', author: 'Tim MA', date: 'Mei 2024', imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475', jenjang: 'MA' },
-  { id: 'p2', title: 'Aplikasi Kantin Digital', category: 'Kewirausahaan', description: 'Aplikasi belanja cashless santri.', author: 'Tim MI', date: 'Mei 2024', imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', jenjang: 'MI' }
+  {
+    id: 'p1',
+    title: 'Irigasi IoT MA',
+    category: 'Sains & Teknologi',
+    description: 'Sistem irigasi otomatis berbasis IoT.',
+    author: 'Tim MA',
+    date: 'Mei 2024',
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475',
+    jenjang: 'MA',
+    documents: [
+      { title: 'Proposal Proyek', type: 'proposal', format: 'pdf', url: '#' },
+      { title: 'Laporan Akhir', type: 'laporan', format: 'pdf', url: '#' }
+    ]
+  },
+  {
+    id: 'p2',
+    title: 'Aplikasi Kantin Digital',
+    category: 'Kewirausahaan',
+    description: 'Aplikasi belanja cashless santri.',
+    author: 'Tim MI',
+    date: 'Mei 2024',
+    imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c',
+    jenjang: 'MI',
+    documents: [
+      { title: 'Business Plan', type: 'proposal', format: 'ppt', url: '#' }
+    ]
+  }
 ];
 
 export const MOCK_JOURNALS: JournalItem[] = [
