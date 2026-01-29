@@ -1,0 +1,8 @@
+{
+  "name": "SMA Unggul Bangsa Portal",
+  "description": "A comprehensive high school portal featuring news, projects, journals, facilities, and academic profiles.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
