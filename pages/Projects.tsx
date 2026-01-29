@@ -1,7 +1,7 @@
 
 import React, { useState, useContext, useEffect } from 'react';
 import { MOCK_PROJECTS, LEVEL_CONFIG, SCHOOL_NAME } from '../constants';
-import { fetchCategories } from '../services/api';
+import { fetchProjectCategories } from '../services/api';
 import { ArrowUpRight, Layers, Tag, LayoutGrid, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel } from '../types';
@@ -18,8 +18,8 @@ const Projects: React.FC = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await fetchCategories();
-        setCategories(data.project_categories);
+        const data = await fetchProjectCategories();
+        setCategories(data);
       } catch (error) {
         console.error('Error loading project categories:', error);
       } finally {

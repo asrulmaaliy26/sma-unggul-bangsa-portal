@@ -1,7 +1,8 @@
 
+
 import React, { useState, useContext, useEffect } from 'react';
 import { MOCK_NEWS, LEVEL_CONFIG } from '../constants';
-import { fetchCategories } from '../services/api';
+import { fetchNewsCategories } from '../services/api';
 import { Search, Eye, Calendar, TrendingUp, Filter, Check } from 'lucide-react';
 import { LevelContext } from '../App';
 import { Link } from 'react-router-dom';
@@ -16,8 +17,8 @@ const News: React.FC = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await fetchCategories();
-        setCategories(data.news_categories);
+        const data = await fetchNewsCategories();
+        setCategories(data);
       } catch (error) {
         console.error('Error loading news categories:', error);
       } finally {

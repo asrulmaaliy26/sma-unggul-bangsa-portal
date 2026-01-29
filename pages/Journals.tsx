@@ -1,7 +1,8 @@
 
+
 import React, { useState, useContext, useEffect } from 'react';
 import { MOCK_JOURNALS, LEVEL_CONFIG } from '../constants';
-import { fetchCategories } from '../services/api';
+import { fetchJournalCategories } from '../services/api';
 import { FileText, User, GraduationCap, Star, Download, Layers, BookOpen, Trophy, Tag, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel, JournalItem } from '../types';
@@ -17,8 +18,8 @@ const Journals: React.FC = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await fetchCategories();
-        setCategories(data.journal_categories);
+        const data = await fetchJournalCategories();
+        setCategories(data);
       } catch (error) {
         console.error('Error loading journal categories:', error);
       } finally {

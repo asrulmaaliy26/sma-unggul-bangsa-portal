@@ -17,3 +17,18 @@ export const fetchCategories = async (): Promise<CategoryData> => {
     }
     return response.json();
 };
+
+export const fetchProjectCategories = async (): Promise<string[]> => {
+    const data = await fetchCategories();
+    return data.project_categories;
+};
+
+export const fetchJournalCategories = async (): Promise<string[]> => {
+    const data = await fetchCategories();
+    return data.journal_categories;
+};
+
+export const fetchNewsCategories = async (): Promise<string[]> => {
+    const data = await fetchCategories();
+    return data.news_categories;
+};

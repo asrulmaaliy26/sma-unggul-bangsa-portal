@@ -1,18 +1,15 @@
 
+
 import { NewsItem, ProjectItem, JournalItem, Achievement, Facility, EducationLevel } from './types';
 
-export const SCHOOL_NAME = "Yayasan Unggul Bangsa";
-
-export const PROJECT_CATEGORIES = ['Semua', 'Sains & Teknologi', 'Sosial & Budaya', 'Keagamaan', 'Seni & Kreativitas', 'Kewirausahaan'];
-export const JOURNAL_CATEGORIES = ['Semua', 'Tafsir & Hadis', 'Sains Terapan', 'Ekonomi Syariah', 'Pendidikan', 'Sosial Humaniora'];
-export const NEWS_CATEGORIES = ['Semua', 'Akademik', 'Kegiatan', 'Pengumuman', 'Prestasi'];
+export const SCHOOL_NAME = "Lembaga Pendidikan Islam Al Hidayah";
 
 export const LEVEL_CONFIG: Record<EducationLevel, { color: string, name: string, bg: string, text: string, type: string }> = {
-  'MI': { color: 'emerald', name: 'MI Unggul Bangsa', bg: 'bg-emerald-600', text: 'text-emerald-600', type: 'Madrasah Ibtidaiyah' },
-  'SMP': { color: 'sky', name: 'SMP Unggul Bangsa', bg: 'bg-sky-600', text: 'text-sky-600', type: 'Sekolah Menengah Pertama' },
-  'SMA': { color: 'islamic-green', name: 'SMA Unggul Bangsa', bg: 'bg-islamic-green-600', text: 'text-islamic-green-600', type: 'Sekolah Menengah Atas' },
-  'KAMPUS': { color: 'indigo', name: 'STAI Unggul Bangsa', bg: 'bg-indigo-600', text: 'text-indigo-600', type: 'Sekolah Tinggi Agama Islam' },
-  'UMUM': { color: 'slate', name: 'Yayasan Unggul Bangsa', bg: 'bg-slate-900', text: 'text-slate-900', type: 'Pusat Yayasan' }
+  'MI': { color: 'emerald', name: 'MI AL Hidayah', bg: 'bg-emerald-600', text: 'text-emerald-600', type: 'Madrasah Ibtidaiyah' },
+  'SMP': { color: 'sky', name: 'SMP AL Hidayah', bg: 'bg-sky-600', text: 'text-sky-600', type: 'Sekolah Menengah Pertama' },
+  'SMA': { color: 'islamic-green', name: 'SMA AL Hidayah', bg: 'bg-islamic-green-600', text: 'text-islamic-green-600', type: 'Sekolah Menengah Atas' },
+  'KAMPUS': { color: 'indigo', name: 'STAI AL Hidayah', bg: 'bg-indigo-600', text: 'text-indigo-600', type: 'Sekolah Tinggi Agama Islam' },
+  'UMUM': { color: 'slate', name: 'Yayasan AL Mannan', bg: 'bg-slate-900', text: 'text-slate-900', type: 'Pusat Yayasan' }
 };
 
 export const ABOUT_CONTENT: Record<EducationLevel, any> = {
@@ -33,11 +30,11 @@ export const ABOUT_CONTENT: Record<EducationLevel, any> = {
   'KAMPUS': { history: "STAI Unggul Bangsa melahirkan intelektual muslim.", visi: "Pusat riset ekonomi syariah.", misi: ["Pendidikan tinggi berkualitas.", "Pengabdian masyarakat."], struktur: { pimpinan: "Ketua STAI", nama: "Dr. Zainal Arifin", staff: [] } }
 };
 
-export const SLIDES = [
-  { image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1', title: 'Membangun Generasi Qurani', subtitle: 'Integrasi ilmu modern dengan Al-Quran.' },
-  { image: 'https://images.unsplash.com/photo-1541339907198-e08756ebafe3', title: 'Inovasi Tanpa Batas', subtitle: 'Riset dan teknologi dalam bingkai keislaman.' },
-  { image: 'https://images.unsplash.com/photo-1524178232363-1fb28f74b671', title: 'Pendidikan Berkualitas', subtitle: 'Berdedikasi tinggi untuk masa depan gemilang.' }
-];
+// export const SLIDES = [
+//   { image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1', title: 'Membangun Generasi Qurani', subtitle: 'Integrasi ilmu modern dengan Al-Quran.' },
+//   { image: 'https://images.unsplash.com/photo-1541339907198-e08756ebafe3', title: 'Inovasi Tanpa Batas', subtitle: 'Riset dan teknologi dalam bingkai keislaman.' },
+//   { image: 'https://images.unsplash.com/photo-1524178232363-1fb28f74b671', title: 'Pendidikan Berkualitas', subtitle: 'Berdedikasi tinggi untuk masa depan gemilang.' }
+// ];
 
 export const MOCK_NEWS: NewsItem[] = [
   { id: '1', title: 'Siswa SMA Menangkan Olimpiade Sains Nasional 2024', excerpt: 'Prestasi membanggakan kembali diraih...', content: '...', date: '24 Mei 2024', views: 1250, imageUrl: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d', category: 'Prestasi', level: 'Nasional', jenjang: 'SMA' },
@@ -59,9 +56,9 @@ export const MOCK_FACILITIES: Facility[] = [
   { id: 'f5', name: 'Robotik SMA', type: 'Ekstra', description: 'Pengembangan teknologi robotika.', imageUrl: 'https://images.unsplash.com/photo-1561557944-6e7860d1a7eb', jenjang: 'SMA' },
 ];
 
-export const SCHOOL_STATS = [
-  { label: 'Total Murid', value: '2,400' },
-  { label: 'Guru & Dosen', value: '150' },
-  { label: 'Gedung', value: '12' },
-  { label: 'Alumni', value: '10k+' },
-];
+// export const SCHOOL_STATS = [
+//   { label: 'Total Murid', value: '2,400' },
+//   { label: 'Guru & Dosen', value: '150' },
+//   { label: 'Gedung', value: '12' },
+//   { label: 'Alumni', value: '10k+' },
+// ];
