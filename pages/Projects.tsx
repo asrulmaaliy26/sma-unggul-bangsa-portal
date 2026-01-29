@@ -1,10 +1,10 @@
 
 import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_PROJECTS, SCHOOL_NAME } from '../constants';
-import { fetchProjectCategories } from '../services/api';
+import { MOCK_PROJECTS, SCHOOL_NAME } from '../constants'; // Fallback
+import { fetchProjectCategories, fetchProjects } from '../services/api';
 import { ArrowUpRight, Layers, Tag, LayoutGrid, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
-import { EducationLevel } from '../types';
+import { EducationLevel, ProjectItem } from '../types';
 import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
@@ -14,26 +14,33 @@ const Projects: React.FC = () => {
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [categories, setCategories] = useState<string[]>(['Semua']);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
+  const [projLoading, setProjLoading] = useState(true);
   const theme = LEVEL_CONFIG[activeLevel];
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchProjectCategories();
-        setCategories(data);
+        const [catsData, projectsData] = await Promise.all([
+          fetchProjectCategories(),
+          fetchProjects()
+        ]);
+        setCategories(catsData);
+        setProjects(projectsData);
       } catch (error) {
-        console.error('Error loading project categories:', error);
+        console.error('Error loading project data:', error);
       } finally {
         setCatLoading(false);
+        setProjLoading(false);
       }
     };
-    loadCategories();
+    loadData();
   }, []);
 
   const effectiveLevelFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
-  const filteredProjects = MOCK_PROJECTS.filter(project => {
+  const filteredProjects = projects.filter(project => {
     const matchesLevel = effectiveLevelFilter === 'SEMUA' || project.jenjang === effectiveLevelFilter;
     const matchesCategory = activeCategory === 'Semua' || project.category === activeCategory;
     return matchesLevel && matchesCategory;
@@ -114,7 +121,12 @@ const Projects: React.FC = () => {
 
         {/* Grid Konten */}
         <div className="flex-1">
-          {filteredProjects.length > 0 ? (
+          {projLoading ? (
+            <div className="text-center py-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-6"></div>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Memuat projek...</p>
+            </div>
+          ) : filteredProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {filteredProjects.map(project => {
                 const projectTheme = LEVEL_CONFIG[project.jenjang];

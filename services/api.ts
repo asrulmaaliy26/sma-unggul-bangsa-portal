@@ -1,4 +1,4 @@
-import { HomeData, CategoryData, LevelConfigData, AboutData } from '../types';
+import { HomeData, CategoryData, LevelConfigData, AboutData, NewsItem, ProjectItem, JournalItem, Facility } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -119,4 +119,38 @@ export const fetchAboutData = async (jenjang: string): Promise<AboutData> => {
     }
 
     return json.data as AboutData;
+};
+
+/* ================= CONTENT (News, Projects, Journals, Facilities) ================= */
+
+export const fetchNews = async (): Promise<NewsItem[]> => {
+    const json = await fetchJson<{ data: NewsItem[] }>(
+        `${API_BASE_URL}/news`,
+        'Gagal mengambil data Berita'
+    );
+    return json.data;
+};
+
+export const fetchProjects = async (): Promise<ProjectItem[]> => {
+    const json = await fetchJson<{ data: ProjectItem[] }>(
+        `${API_BASE_URL}/projects`,
+        'Gagal mengambil data Project'
+    );
+    return json.data;
+};
+
+export const fetchJournals = async (): Promise<JournalItem[]> => {
+    const json = await fetchJson<{ data: JournalItem[] }>(
+        `${API_BASE_URL}/journals`,
+        'Gagal mengambil data Jurnal'
+    );
+    return json.data;
+};
+
+export const fetchFacilities = async (): Promise<Facility[]> => {
+    const json = await fetchJson<{ data: Facility[] }>(
+        `${API_BASE_URL}/facilities`,
+        'Gagal mengambil data Fasilitas'
+    );
+    return json.data;
 };

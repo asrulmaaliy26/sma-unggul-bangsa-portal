@@ -1,36 +1,44 @@
 
 
 import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_NEWS } from '../constants';
-import { fetchNewsCategories } from '../services/api';
+import { MOCK_NEWS } from '../constants'; // Fallback if API fails empty
+import { fetchNewsCategories, fetchNews } from '../services/api';
 import { Search, Eye, Calendar, TrendingUp, Filter, Check } from 'lucide-react';
 import { LevelContext } from '../App';
 import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
+import { NewsItem } from '../types';
 
 const News: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [categories, setCategories] = useState<string[]>(['Semua']);
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
+  const [newsLoading, setNewsLoading] = useState(true);
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchNewsCategories();
-        setCategories(data);
+        const [catsData, newsData] = await Promise.all([
+          fetchNewsCategories(),
+          fetchNews()
+        ]);
+        setCategories(catsData);
+        setNews(newsData);
       } catch (error) {
-        console.error('Error loading news categories:', error);
+        console.error('Error loading data:', error);
       } finally {
         setCatLoading(false);
+        setNewsLoading(false);
       }
     };
-    loadCategories();
+    loadData();
   }, []);
 
-  const filteredNews = MOCK_NEWS.filter(n => {
+  const filteredNews = news.filter(n => {
     const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = activeLevel === 'UMUM' ? true : n.jenjang === activeLevel;
@@ -39,7 +47,7 @@ const News: React.FC = () => {
     return matchesSearch && matchesLevel && matchesCategory;
   });
 
-  const trendingNews = [...MOCK_NEWS]
+  const trendingNews = [...news]
     .filter(n => activeLevel === 'UMUM' ? true : n.jenjang === activeLevel)
     .sort((a, b) => b.views - a.views)
     .slice(0, 4);
@@ -101,7 +109,12 @@ const News: React.FC = () => {
           </header>
 
           <div className="space-y-10">
-            {filteredNews.length > 0 ? filteredNews.map(news => {
+            {newsLoading ? (
+              <div className="text-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
+                <p className="text-slate-400 font-bold">Memuat berita...</p>
+              </div>
+            ) : filteredNews.length > 0 ? filteredNews.map(news => {
               // const newsTheme = LEVEL_CONFIG[news.jenjang];
               const newsTheme =
                 news.jenjang === 'SMA'

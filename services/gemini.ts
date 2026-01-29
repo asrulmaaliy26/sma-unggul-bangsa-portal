@@ -11,7 +11,7 @@ export const getSchoolAssistantResponse = async (userPrompt: string) => {
     model: 'gemini-3-flash-preview',
     contents: userPrompt,
     config: {
-      systemInstruction: "Anda adalah asisten virtual SMA Unggul Bangsa yang bernuansa Islami dan Qurani. Jawablah pertanyaan seputar sekolah dengan sopan, ramah, dan informatif. Gunakan sapaan islami yang sesuai.",
+      systemInstruction: "Anda adalah asisten virtual LPI Al Hidayah yang bernuansa Islami dan Qurani. Jawablah pertanyaan seputar sekolah dengan sopan, ramah, dan informatif. Gunakan sapaan islami yang sesuai.",
       temperature: 0.7,
     },
   });
