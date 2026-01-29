@@ -1,15 +1,46 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MOCK_JOURNALS } from '../constants';
+import { fetchJournalDetail, fetchJournals } from '../services/api';
+import { JournalItem } from '../types';
 import { ArrowLeft, ArrowRight, Download, FileText, User, GraduationCap, Star, BookOpen, Quote } from 'lucide-react';
 
 const JournalDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
-   const journal = MOCK_JOURNALS.find(j => j.id === id);
-   const recommendedJournals = MOCK_JOURNALS.filter(j => j.id !== id).slice(0, 3);
+   const [journal, setJournal] = useState<JournalItem | null>(null);
+   const [recommendedJournals, setRecommendedJournals] = useState<JournalItem[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState(false);
 
-   if (!journal) return (
+   useEffect(() => {
+      const loadData = async () => {
+         if (!id) return;
+         setLoading(true);
+         setError(false);
+         try {
+            const [detail, list] = await Promise.all([
+               fetchJournalDetail(id),
+               fetchJournals()
+            ]);
+            setJournal(detail);
+            setRecommendedJournals(list.filter(j => j.id !== id).slice(0, 3));
+         } catch (err) {
+            console.error(err);
+            setError(true);
+         } finally {
+            setLoading(false);
+         }
+      };
+      loadData();
+   }, [id]);
+
+   if (loading) return (
+      <div className="flex justify-center py-40">
+         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
+      </div>
+   );
+
+   if (error || !journal) return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
          <h2 className="text-2xl font-bold">Jurnal tidak ditemukan</h2>
          <Link to="/jurnal" className="text-blue-600 hover:underline mt-4 inline-block">Kembali ke Jurnal</Link>

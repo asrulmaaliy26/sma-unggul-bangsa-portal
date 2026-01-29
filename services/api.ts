@@ -123,6 +123,8 @@ export const fetchAboutData = async (jenjang: string): Promise<AboutData> => {
 
 /* ================= CONTENT (News, Projects, Journals, Facilities) ================= */
 
+// LISTS
+
 export const fetchNews = async (): Promise<NewsItem[]> => {
     const json = await fetchJson<{ data: NewsItem[] }>(
         `${API_BASE_URL}/news`,
@@ -151,6 +153,40 @@ export const fetchFacilities = async (): Promise<Facility[]> => {
     const json = await fetchJson<{ data: Facility[] }>(
         `${API_BASE_URL}/facilities`,
         'Gagal mengambil data Fasilitas'
+    );
+    return json.data;
+};
+
+// DETAILS
+
+export const fetchNewsDetail = async (id: string): Promise<NewsItem> => {
+    const json = await fetchJson<{ data: NewsItem }>(
+        `${API_BASE_URL}/news/${id}`,
+        `Gagal mengambil detail Berita ${id}`
+    );
+    return json.data;
+};
+
+export const fetchProjectDetail = async (id: string): Promise<ProjectItem> => {
+    const json = await fetchJson<{ data: ProjectItem }>(
+        `${API_BASE_URL}/projects/${id}`,
+        `Gagal mengambil detail Project ${id}`
+    );
+    return json.data;
+};
+
+export const fetchJournalDetail = async (id: string): Promise<JournalItem> => {
+    const json = await fetchJson<{ data: JournalItem }>(
+        `${API_BASE_URL}/journals/${id}`,
+        `Gagal mengambil detail Jurnal ${id}`
+    );
+    return json.data;
+};
+
+export const fetchFacilityDetail = async (id: string): Promise<Facility> => {
+    const json = await fetchJson<{ data: Facility }>(
+        `${API_BASE_URL}/facilities/${id}`,
+        `Gagal mengambil detail Fasilitas ${id}`
     );
     return json.data;
 };

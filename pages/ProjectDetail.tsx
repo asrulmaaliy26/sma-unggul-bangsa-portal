@@ -1,15 +1,46 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MOCK_PROJECTS } from '../constants';
+import { fetchProjectDetail, fetchProjects } from '../services/api';
+import { ProjectItem } from '../types';
 import { ArrowLeft, ArrowRight, User, Calendar, Lightbulb, Zap, Rocket } from 'lucide-react';
 
 const ProjectDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
-   const project = MOCK_PROJECTS.find(p => p.id === id);
-   const otherProjects = MOCK_PROJECTS.filter(p => p.id !== id).slice(0, 3);
+   const [project, setProject] = useState<ProjectItem | null>(null);
+   const [otherProjects, setOtherProjects] = useState<ProjectItem[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState(false);
 
-   if (!project) return (
+   useEffect(() => {
+      const loadData = async () => {
+         if (!id) return;
+         setLoading(true);
+         setError(false);
+         try {
+            const [detail, list] = await Promise.all([
+               fetchProjectDetail(id),
+               fetchProjects()
+            ]);
+            setProject(detail);
+            setOtherProjects(list.filter(p => p.id !== id).slice(0, 3));
+         } catch (err) {
+            console.error(err);
+            setError(true);
+         } finally {
+            setLoading(false);
+         }
+      };
+      loadData();
+   }, [id]);
+
+   if (loading) return (
+      <div className="flex justify-center py-40">
+         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
+      </div>
+   );
+
+   if (error || !project) return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
          <h2 className="text-2xl font-bold">Projek tidak ditemukan</h2>
          <Link to="/projek" className="text-blue-600 hover:underline mt-4 inline-block">Kembali ke Projek</Link>
