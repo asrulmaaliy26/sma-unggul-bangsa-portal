@@ -79,3 +79,13 @@ export interface CategoryData {
   journal_categories: string[];
   news_categories: string[];
 }
+
+export interface LevelConfigItem {
+  color: string;
+  name: string;
+  bg: string;
+  text: string;
+  type: string;
+}
+
+export type LevelConfigData = Record<EducationLevel, LevelConfigItem>;

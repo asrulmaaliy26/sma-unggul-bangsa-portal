@@ -1,14 +1,16 @@
 
 import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_PROJECTS, LEVEL_CONFIG, SCHOOL_NAME } from '../constants';
+import { MOCK_PROJECTS, SCHOOL_NAME } from '../constants';
 import { fetchProjectCategories } from '../services/api';
 import { ArrowUpRight, Layers, Tag, LayoutGrid, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel } from '../types';
 import { Link } from 'react-router-dom';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Projects: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [categories, setCategories] = useState<string[]>(['Semua']);

@@ -1,11 +1,12 @@
 
 
 import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_NEWS, LEVEL_CONFIG } from '../constants';
+import { MOCK_NEWS } from '../constants';
 import { fetchNewsCategories } from '../services/api';
 import { Search, Eye, Calendar, TrendingUp, Filter, Check } from 'lucide-react';
 import { LevelContext } from '../App';
 import { Link } from 'react-router-dom';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const News: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +14,7 @@ const News: React.FC = () => {
   const [categories, setCategories] = useState<string[]>(['Semua']);
   const [catLoading, setCatLoading] = useState(true);
   const { activeLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
 
   useEffect(() => {
     const loadCategories = async () => {

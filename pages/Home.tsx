@@ -1,15 +1,17 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import Carousel from '../components/Carousel';
-import { MOCK_NEWS, MOCK_PROJECTS, MOCK_JOURNALS, LEVEL_CONFIG } from '../constants';
+import { MOCK_NEWS, MOCK_PROJECTS, MOCK_JOURNALS } from '../constants';
 import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap, Building, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
 import { Slide, Stat } from '../types';
 import { fetchHomeData } from '../services/api';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Home: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
   const theme = LEVEL_CONFIG[activeLevel];
   const [stats, setStats] = useState<Stat[]>([]);
   const [slides, setSlides] = useState<Slide[]>([]);

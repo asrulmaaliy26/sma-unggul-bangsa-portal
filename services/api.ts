@@ -1,4 +1,4 @@
-import { HomeData, CategoryData } from '../types';
+import { HomeData, CategoryData, LevelConfigData } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -31,4 +31,12 @@ export const fetchJournalCategories = async (): Promise<string[]> => {
 export const fetchNewsCategories = async (): Promise<string[]> => {
     const data = await fetchCategories();
     return data.news_categories;
+};
+
+export const fetchLevelConfig = async (): Promise<LevelConfigData> => {
+    const response = await fetch(`${API_BASE_URL}/jenjang`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch level config');
+    }
+    return response.json();
 };

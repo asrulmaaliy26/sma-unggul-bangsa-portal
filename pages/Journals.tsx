@@ -1,15 +1,17 @@
 
 
 import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_JOURNALS, LEVEL_CONFIG } from '../constants';
+import { MOCK_JOURNALS } from '../constants';
 import { fetchJournalCategories } from '../services/api';
 import { FileText, User, GraduationCap, Star, Download, Layers, BookOpen, Trophy, Tag, ChevronRight } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel, JournalItem } from '../types';
 import { Link } from 'react-router-dom';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Journals: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [categories, setCategories] = useState<string[]>(['Semua']);

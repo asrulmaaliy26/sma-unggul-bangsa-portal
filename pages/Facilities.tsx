@@ -1,15 +1,17 @@
 
 import React, { useState, useContext } from 'react';
-import { MOCK_FACILITIES, LEVEL_CONFIG, SCHOOL_NAME } from '../constants';
+import { MOCK_FACILITIES, SCHOOL_NAME } from '../constants';
 import { Layout, Zap, Layers, MapPin, ChevronRight, Search } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel } from '../types';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Facilities: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
   const [activeTab, setActiveTab] = useState<'Ruang' | 'Ekstra'>('Ruang');
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
-  
+
   const theme = LEVEL_CONFIG[activeLevel];
 
   const effectiveJenjangFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
@@ -51,11 +53,10 @@ const Facilities: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${
-                    activeTab === tab.id 
-                      ? `${theme.bg} text-white border-transparent shadow-xl shadow-black/10` 
+                  className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${activeTab === tab.id
+                      ? `${theme.bg} text-white border-transparent shadow-xl shadow-black/10`
                       : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-100'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-3">
                     <tab.icon className="w-4 h-4" /> {tab.name}
@@ -77,9 +78,8 @@ const Facilities: React.FC = () => {
                   <button
                     key={opt}
                     onClick={() => setSubFilter(opt)}
-                    className={`w-full text-left px-5 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${
-                      subFilter === opt ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
-                    }`}
+                    className={`w-full text-left px-5 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
                   >
                     {opt}
                     {subFilter === opt && <ChevronRight className="w-3 h-3" />}
@@ -98,10 +98,10 @@ const Facilities: React.FC = () => {
                 const facilityTheme = LEVEL_CONFIG[facility.jenjang];
                 return (
                   <div key={facility.id} className="group relative rounded-[3.5rem] overflow-hidden bg-white shadow-sm border border-slate-100 h-[500px]">
-                    <img 
-                      src={facility.imageUrl} 
-                      alt={facility.name} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                    <img
+                      src={facility.imageUrl}
+                      alt={facility.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent p-12 flex flex-col justify-end opacity-95 group-hover:opacity-100 transition-opacity">
                       <div className="flex items-center gap-3 mb-6">
@@ -128,7 +128,7 @@ const Facilities: React.FC = () => {
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
               <Layout className="w-16 h-16 text-slate-200 mx-auto mb-6" />
               <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Belum ada data fasilitas ditemukan</p>
-              <button onClick={() => {setSubFilter('SEMUA'); setActiveTab('Ruang');}} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Semua Filter</button>
+              <button onClick={() => { setSubFilter('SEMUA'); setActiveTab('Ruang'); }} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Semua Filter</button>
             </div>
           )}
         </div>

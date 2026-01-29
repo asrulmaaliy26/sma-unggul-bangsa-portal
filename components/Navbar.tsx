@@ -2,12 +2,14 @@
 import React, { useState, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Menu, X, School, UserCog, Layers } from 'lucide-react';
-import { SCHOOL_NAME, LEVEL_CONFIG } from '../constants';
+import { SCHOOL_NAME } from '../constants';
 import { LevelContext } from '../App';
 import { EducationLevel } from '../types';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Navbar: React.FC = () => {
   const { activeLevel, setActiveLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isLevelSelectorOpen, setIsLevelSelectorOpen] = useState(false);
