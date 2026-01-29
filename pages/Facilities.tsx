@@ -6,6 +6,7 @@ import { Layout, Zap, Layers, MapPin, ChevronRight, Search } from 'lucide-react'
 import { LevelContext } from '../App';
 import { EducationLevel, Facility } from '../types';
 import { useLevelConfig } from '../hooks/useLevelConfig';
+import Pagination from '../components/Pagination';
 
 const Facilities: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
@@ -13,6 +14,8 @@ const Facilities: React.FC = () => {
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   const theme = LEVEL_CONFIG[activeLevel];
 
@@ -30,12 +33,23 @@ const Facilities: React.FC = () => {
     loadData();
   }, []);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [subFilter, activeLevel]);
+
   const effectiveJenjangFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
   const filtered = facilities.filter(f => {
     const matchesJenjang = effectiveJenjangFilter === 'SEMUA' || f.jenjang === effectiveJenjangFilter;
     return matchesJenjang;
   });
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedFacilities = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Generate filter options dynamically from API config
   const filterOptions = React.useMemo(() => {
@@ -90,37 +104,45 @@ const Facilities: React.FC = () => {
               <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Memuat fasilitas...</p>
             </div>
           ) : filtered.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {filtered.map(facility => {
-                const facilityTheme = LEVEL_CONFIG[facility.jenjang];
-                return (
-                  <div key={facility.id} className="group relative rounded-[3.5rem] overflow-hidden bg-white shadow-sm border border-slate-100 h-[500px]">
-                    <img
-                      src={facility.imageUrl}
-                      alt={facility.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent p-12 flex flex-col justify-end opacity-95 group-hover:opacity-100 transition-opacity">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className={`${facilityTheme.bg} text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg`}>
-                          {facility.jenjang}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {paginatedFacilities.map(facility => {
+                  const facilityTheme = LEVEL_CONFIG[facility.jenjang];
+                  return (
+                    <div key={facility.id} className="group relative rounded-[3.5rem] overflow-hidden bg-white shadow-sm border border-slate-100 h-[500px]">
+                      <img
+                        src={facility.imageUrl}
+                        alt={facility.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent p-12 flex flex-col justify-end opacity-95 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className={`${facilityTheme.bg} text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg`}>
+                            {facility.jenjang}
+                          </div>
+                          <div className="bg-white/10 backdrop-blur-md text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
+                            {facility.type}
+                          </div>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-md text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
-                          {facility.type}
+                        <h3 className="text-3xl font-black text-white mb-4 leading-tight">{facility.name}</h3>
+                        <p className="text-slate-200 font-medium max-w-md text-sm leading-relaxed mb-8 line-clamp-3">
+                          {facility.description}
+                        </p>
+                        <div className="flex items-center gap-2 text-islamic-gold-500 font-black text-[10px] uppercase tracking-[0.3em]">
+                          <MapPin className="w-4 h-4" /> Area Kampus Terintegrasi
                         </div>
-                      </div>
-                      <h3 className="text-3xl font-black text-white mb-4 leading-tight">{facility.name}</h3>
-                      <p className="text-slate-200 font-medium max-w-md text-sm leading-relaxed mb-8 line-clamp-3">
-                        {facility.description}
-                      </p>
-                      <div className="flex items-center gap-2 text-islamic-gold-500 font-black text-[10px] uppercase tracking-[0.3em]">
-                        <MapPin className="w-4 h-4" /> Area Kampus Terintegrasi
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                themeColor={theme.bg}
+              />
+            </>
           ) : (
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
               <Layout className="w-16 h-16 text-slate-200 mx-auto mb-6" />

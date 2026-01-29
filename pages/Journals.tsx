@@ -8,6 +8,7 @@ import { LevelContext } from '../App';
 import { EducationLevel, JournalItem } from '../types';
 import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
+import Pagination from '../components/Pagination';
 
 const Journals: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
@@ -18,6 +19,8 @@ const Journals: React.FC = () => {
   const [journals, setJournals] = useState<JournalItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const loadData = async () => {
@@ -40,6 +43,11 @@ const Journals: React.FC = () => {
 
   const effectiveLevelFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [subFilter, activeCategory, activeLevel]);
+
   // Unused helper function but updating for consistency if needed in future
   const getBestByLevel = (level: EducationLevel): JournalItem | undefined => {
     const levelJournals = journals.filter(j => j.jenjang === level);
@@ -59,6 +67,12 @@ const Journals: React.FC = () => {
     const matchesCategory = activeCategory === 'Semua' || journal.category === activeCategory;
     return matchesLevel && matchesCategory;
   });
+
+  const totalPages = Math.ceil(filteredJournals.length / itemsPerPage);
+  const paginatedJournals = filteredJournals.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const JournalCard = ({ journal }: { journal: JournalItem, key?: any }) => {
     const journalTheme = LEVEL_CONFIG[journal.jenjang];
@@ -196,11 +210,19 @@ const Journals: React.FC = () => {
               <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Memuat jurnal...</p>
             </div>
           ) : filteredJournals.length > 0 ? (
-            <div className="space-y-10">
-              {filteredJournals.map(journal => (
-                <JournalCard key={journal.id} journal={journal} />
-              ))}
-            </div>
+            <>
+              <div className="space-y-10">
+                {paginatedJournals.map(journal => (
+                  <JournalCard key={journal.id} journal={journal} />
+                ))}
+              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                themeColor="bg-islamic-green-700"
+              />
+            </>
           ) : (
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
               <FileText className="w-16 h-16 text-slate-200 mx-auto mb-6" />

@@ -8,6 +8,7 @@ import { LevelContext } from '../App';
 import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 import { NewsItem } from '../types';
+import Pagination from '../components/Pagination';
 
 const News: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,6 +17,9 @@ const News: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
 
@@ -38,6 +42,11 @@ const News: React.FC = () => {
     loadData();
   }, []);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeCategory, activeLevel]);
+
   const filteredNews = news.filter(n => {
     const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
@@ -46,6 +55,12 @@ const News: React.FC = () => {
 
     return matchesSearch && matchesLevel && matchesCategory;
   });
+
+  const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+  const paginatedNews = filteredNews.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const trendingNews = [...news]
     .filter(n => activeLevel === 'UMUM' ? true : n.jenjang === activeLevel)
@@ -114,45 +129,55 @@ const News: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
                 <p className="text-slate-400 font-bold">Memuat berita...</p>
               </div>
-            ) : filteredNews.length > 0 ? filteredNews.map(news => {
-              // const newsTheme = LEVEL_CONFIG[news.jenjang];
-              const newsTheme =
-                news.jenjang === 'SMA'
-                  ? LEVEL_CONFIG['MA']
-                  : LEVEL_CONFIG[news.jenjang];
-              return (
-                <article key={news.id} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-slate-100 flex flex-col sm:flex-row group">
-                  <div className="sm:w-2/5 h-64 sm:h-auto overflow-hidden relative">
-                    <img src={news.imageUrl} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                    <div className={`absolute top-6 left-6 ${newsTheme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl`}>
-                      {news.jenjang}
-                    </div>
-                  </div>
-                  <div className="sm:w-3/5 p-10 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-4 mb-6">
-                        <span className="bg-slate-50 text-slate-400 border border-slate-100 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">{news.category}</span>
-                        <span className="text-slate-400 text-[10px] font-bold flex items-center uppercase tracking-widest gap-2">
-                          <Calendar className="w-4 h-4 text-islamic-gold-500" /> {news.date}
-                        </span>
+            ) : filteredNews.length > 0 ? (
+              <>
+                {paginatedNews.map(news => {
+                  // const newsTheme = LEVEL_CONFIG[news.jenjang];
+                  const newsTheme =
+                    news.jenjang === 'SMA'
+                      ? LEVEL_CONFIG['MA']
+                      : LEVEL_CONFIG[news.jenjang];
+                  return (
+                    <article key={news.id} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-slate-100 flex flex-col sm:flex-row group">
+                      <div className="sm:w-2/5 h-64 sm:h-auto overflow-hidden relative">
+                        <img src={news.imageUrl} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                        <div className={`absolute top-6 left-6 ${newsTheme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl`}>
+                          {news.jenjang}
+                        </div>
                       </div>
-                      <Link to={`/berita/${news.id}`}>
-                        <h2 className="text-2xl font-black text-slate-900 mb-4 leading-tight group-hover:text-islamic-green-700 transition-colors">{news.title}</h2>
-                      </Link>
-                      <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed mb-8">{news.excerpt}</p>
-                    </div>
-                    <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-                      <div className="flex items-center text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                        <Eye className="w-4 h-4 mr-2 text-islamic-green-600" /> {news.views.toLocaleString()} Pembaca
+                      <div className="sm:w-3/5 p-10 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-4 mb-6">
+                            <span className="bg-slate-50 text-slate-400 border border-slate-100 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">{news.category}</span>
+                            <span className="text-slate-400 text-[10px] font-bold flex items-center uppercase tracking-widest gap-2">
+                              <Calendar className="w-4 h-4 text-islamic-gold-500" /> {news.date}
+                            </span>
+                          </div>
+                          <Link to={`/berita/${news.id}`}>
+                            <h2 className="text-2xl font-black text-slate-900 mb-4 leading-tight group-hover:text-islamic-green-700 transition-colors">{news.title}</h2>
+                          </Link>
+                          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed mb-8">{news.excerpt}</p>
+                        </div>
+                        <div className="flex items-center justify-between pt-8 border-t border-slate-50">
+                          <div className="flex items-center text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            <Eye className="w-4 h-4 mr-2 text-islamic-green-600" /> {news.views.toLocaleString()} Pembaca
+                          </div>
+                          <Link to={`/berita/${news.id}`} className="text-islamic-green-600 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
+                            Baca Berita <TrendingUp className="w-4 h-4" />
+                          </Link>
+                        </div>
                       </div>
-                      <Link to={`/berita/${news.id}`} className="text-islamic-green-600 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
-                        Baca Berita <TrendingUp className="w-4 h-4" />
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              );
-            }) : (
+                    </article>
+                  );
+                })}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  themeColor={theme.bg}
+                />
+              </>
+            ) : (
               <div className="text-center py-32 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                   <Search className="w-8 h-8 text-slate-200" />
