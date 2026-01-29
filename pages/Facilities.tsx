@@ -9,7 +9,6 @@ import { useLevelConfig } from '../hooks/useLevelConfig';
 const Facilities: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
-  const [activeTab, setActiveTab] = useState<'Ruang' | 'Ekstra'>('Ruang');
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
 
   const theme = LEVEL_CONFIG[activeLevel];
@@ -17,12 +16,15 @@ const Facilities: React.FC = () => {
   const effectiveJenjangFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
   const filtered = MOCK_FACILITIES.filter(f => {
-    const matchesTab = f.type === activeTab;
     const matchesJenjang = effectiveJenjangFilter === 'SEMUA' || f.jenjang === effectiveJenjangFilter;
-    return matchesTab && matchesJenjang;
+    return matchesJenjang;
   });
 
-  const filterOptions: (EducationLevel | 'SEMUA')[] = ['SEMUA', 'MI', 'SMP', 'SMA', 'KAMPUS'];
+  // Generate filter options dynamically from API config
+  const filterOptions = React.useMemo(() => {
+    const levels = Object.keys(LEVEL_CONFIG).filter(key => key !== 'UMUM') as EducationLevel[];
+    return ['SEMUA', ...levels] as (EducationLevel | 'SEMUA')[];
+  }, [LEVEL_CONFIG]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-20">
@@ -40,36 +42,9 @@ const Facilities: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Sidebar Kategori */}
         <aside className="lg:w-72 flex-shrink-0 space-y-8">
-          {/* Tipe Fasilitas */}
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Layout className="w-3 h-3" /> Jenis Layanan
-            </h3>
-            <div className="space-y-2">
-              {[
-                { id: 'Ruang', name: 'Fasilitas Ruang', icon: Layout },
-                { id: 'Ekstra', name: 'Ekstrakurikuler', icon: Zap }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full text-left px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-between border ${activeTab === tab.id
-                      ? `${theme.bg} text-white border-transparent shadow-xl shadow-black/10`
-                      : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-100'
-                    }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <tab.icon className="w-4 h-4" /> {tab.name}
-                  </span>
-                  {activeTab === tab.id && <ChevronRight className="w-4 h-4" />}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Level Filter (Hanya di mode UMUM) */}
           {activeLevel === 'UMUM' && (
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 sticky top-28">
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <Layers className="w-3 h-3" /> Jenjang Pendidikan
               </h3>
@@ -81,7 +56,7 @@ const Facilities: React.FC = () => {
                     className={`w-full text-left px-5 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
                       }`}
                   >
-                    {opt}
+                    {opt === 'SEMUA' ? 'Semua Jenjang' : LEVEL_CONFIG[opt]?.name || opt}
                     {subFilter === opt && <ChevronRight className="w-3 h-3" />}
                   </button>
                 ))}
@@ -128,7 +103,7 @@ const Facilities: React.FC = () => {
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
               <Layout className="w-16 h-16 text-slate-200 mx-auto mb-6" />
               <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Belum ada data fasilitas ditemukan</p>
-              <button onClick={() => { setSubFilter('SEMUA'); setActiveTab('Ruang'); }} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Semua Filter</button>
+              <button onClick={() => { setSubFilter('SEMUA'); }} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Semua Filter</button>
             </div>
           )}
         </div>

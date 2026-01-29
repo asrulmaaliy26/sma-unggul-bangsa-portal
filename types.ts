@@ -1,5 +1,5 @@
 
-export type EducationLevel = 'MI' | 'SMP' | 'SMA' | 'KAMPUS' | 'UMUM';
+export type EducationLevel = string;
 
 export interface NewsItem {
   id: string;
@@ -70,7 +70,7 @@ export interface Stat {
 }
 
 export interface HomeData {
-  stats: Stat[];
+  stats: Record<string, Stat[]>;
   slides: Slide[];
 }
 

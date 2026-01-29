@@ -39,7 +39,11 @@ const Projects: React.FC = () => {
     return matchesLevel && matchesCategory;
   });
 
-  const filterOptions: (EducationLevel | 'SEMUA')[] = ['SEMUA', 'MI', 'SMP', 'SMA', 'KAMPUS'];
+  // Generate filter options dynamically from API config
+  const filterOptions = React.useMemo(() => {
+    const levels = Object.keys(LEVEL_CONFIG).filter(key => key !== 'UMUM') as EducationLevel[];
+    return ['SEMUA', ...levels] as (EducationLevel | 'SEMUA')[];
+  }, [LEVEL_CONFIG]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-20">
@@ -71,7 +75,7 @@ const Projects: React.FC = () => {
                     className={`text-left px-4 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-slate-900 text-white shadow-lg shadow-black/10' : 'text-slate-500 hover:bg-slate-50'
                       }`}
                   >
-                    {opt}
+                    {opt === 'SEMUA' ? 'Semua Jenjang' : LEVEL_CONFIG[opt]?.name || opt}
                     {subFilter === opt && <ChevronRight className="w-3 h-3" />}
                   </button>
                 ))}

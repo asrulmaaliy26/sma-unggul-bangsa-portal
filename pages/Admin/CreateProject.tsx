@@ -6,10 +6,12 @@ import { ArrowLeft, Save, Layers, User, Image as ImageIcon, AlignLeft, FileText,
 import { LevelContext } from '../../App';
 import { EducationLevel } from '../../types';
 import { fetchProjectCategories } from '../../services/api';
+import { useLevelConfig } from '../../hooks/useLevelConfig';
 
 const CreateProject: React.FC = () => {
   const navigate = useNavigate();
   const { activeLevel } = useContext(LevelContext);
+  const LEVEL_CONFIG = useLevelConfig();
   const [categories, setCategories] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -93,10 +95,13 @@ const CreateProject: React.FC = () => {
                   value={jenjang}
                   onChange={(e) => setJenjang(e.target.value as EducationLevel)}
                 >
-                  <option value="MI">MI (SD)</option>
-                  <option value="SMP">SMP</option>
-                  <option value="SMA">SMA</option>
-                  <option value="KAMPUS">STAI (Kampus)</option>
+                  {Object.keys(LEVEL_CONFIG)
+                    .filter(key => key !== 'UMUM')
+                    .map(key => (
+                      <option key={key} value={key}>
+                        {key} ({LEVEL_CONFIG[key].type})
+                      </option>
+                    ))}
                 </select>
               </div>
 

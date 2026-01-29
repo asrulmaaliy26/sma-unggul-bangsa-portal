@@ -5,10 +5,12 @@ import { ArrowLeft, Save, Layers, User, GraduationCap, FileText, Star, Eye, Exte
 import { MOCK_JOURNALS } from '../../constants';
 import { EducationLevel } from '../../types';
 import { fetchJournalCategories } from '../../services/api';
+import { useLevelConfig } from '../../hooks/useLevelConfig';
 
 const EditJournal: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const LEVEL_CONFIG = useLevelConfig();
   const [categories, setCategories] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -101,10 +103,13 @@ const EditJournal: React.FC = () => {
                   value={jenjang}
                   onChange={(e) => setJenjang(e.target.value as EducationLevel)}
                 >
-                  <option value="MI">MI (SD)</option>
-                  <option value="SMP">SMP</option>
-                  <option value="SMA">SMA</option>
-                  <option value="KAMPUS">STAI (Kampus)</option>
+                  {Object.keys(LEVEL_CONFIG)
+                    .filter(key => key !== 'UMUM')
+                    .map(key => (
+                      <option key={key} value={key}>
+                        {key} ({LEVEL_CONFIG[key].type})
+                      </option>
+                    ))}
                 </select>
               </div>
 

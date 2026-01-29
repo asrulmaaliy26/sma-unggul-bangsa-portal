@@ -13,7 +13,7 @@ const Home: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
   const theme = LEVEL_CONFIG[activeLevel];
-  const [stats, setStats] = useState<Stat[]>([]);
+  const [allStats, setAllStats] = useState<Record<string, Stat[]>>({});
   const [slides, setSlides] = useState<Slide[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +21,7 @@ const Home: React.FC = () => {
     const loadHomeData = async () => {
       try {
         const data = await fetchHomeData();
-        setStats(data.stats);
+        setAllStats(data.stats);
         setSlides(data.slides);
       } catch (error) {
         console.error('Error loading home data:', error);
@@ -36,6 +36,15 @@ const Home: React.FC = () => {
   const newsList = activeLevel === 'UMUM' ? MOCK_NEWS : MOCK_NEWS.filter(n => n.jenjang === activeLevel);
   const projectList = activeLevel === 'UMUM' ? MOCK_PROJECTS : MOCK_PROJECTS.filter(p => p.jenjang === activeLevel);
   const journalList = activeLevel === 'UMUM' ? MOCK_JOURNALS : MOCK_JOURNALS.filter(j => j.jenjang === activeLevel);
+
+  // Logic untuk memilih stats berdasarkan activeLevel
+  const currentStats = React.useMemo(() => {
+    // Mapping level aplikasi ke key API stats
+    let key = activeLevel as string;
+    if (activeLevel === 'SMA') key = 'MA';
+
+    return allStats[key] || [];
+  }, [allStats, activeLevel]);
 
   const topJournal = journalList.find(j => j.isBest) || journalList[0];
 
@@ -63,7 +72,7 @@ const Home: React.FC = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto"></div>
               </div>
             ) : (
-              stats.map((stat, idx) => (
+              currentStats.map((stat, idx) => (
                 <div key={idx} className="flex flex-col items-center text-center group">
                   <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300">
                     {getStatIcon(stat.label)}

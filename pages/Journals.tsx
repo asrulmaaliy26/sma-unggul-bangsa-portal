@@ -40,8 +40,11 @@ const Journals: React.FC = () => {
     return best || [...levelJournals].sort((a, b) => b.score - a.score)[0];
   };
 
-  const levels: EducationLevel[] = ['MI', 'SMP', 'SMA', 'KAMPUS'];
-  const filterOptions: (EducationLevel | 'SEMUA')[] = ['SEMUA', ...levels];
+  // Generate filter options dynamically from API config
+  const filterOptions = React.useMemo(() => {
+    const levels = Object.keys(LEVEL_CONFIG).filter(key => key !== 'UMUM') as EducationLevel[];
+    return ['SEMUA', ...levels] as (EducationLevel | 'SEMUA')[];
+  }, [LEVEL_CONFIG]);
 
   const filteredJournals = MOCK_JOURNALS.filter(journal => {
     const matchesLevel = effectiveLevelFilter === 'SEMUA' || journal.jenjang === effectiveLevelFilter;
@@ -141,7 +144,7 @@ const Journals: React.FC = () => {
                     className={`w-full text-left px-4 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-islamic-green-700 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
                       }`}
                   >
-                    {opt}
+                    {opt === 'SEMUA' ? 'Semua Jenjang' : LEVEL_CONFIG[opt]?.name || opt}
                     {subFilter === opt && <ChevronRight className="w-3 h-3" />}
                   </button>
                 ))}
