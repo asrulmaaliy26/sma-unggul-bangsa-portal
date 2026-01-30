@@ -80,10 +80,44 @@ export const getDefaultLevel = (): string => {
 /* ================= HOME ================= */
 
 export const fetchHomeData = async (): Promise<HomeData> => {
-    return fetchJson<HomeData>(
-        `${API_BASE_URL}/home`,
-        'Gagal mengambil data Home'
-    );
+    let apiData: HomeData;
+    try {
+        apiData = await fetchJson<HomeData>(
+            `${API_BASE_URL}/home`,
+            'Gagal mengambil data Home'
+        );
+    } catch (e) {
+        console.warn("API Home fetch failed, using minimal fallback for stats.");
+        apiData = { stats: {}, slides: [] };
+    }
+
+    // Override Slides from ENV
+    const envSlides = (import.meta as any).env.VITE_HOME_SLIDES;
+    if (envSlides) {
+        try {
+            const parsedSlides = JSON.parse(envSlides);
+            if (Array.isArray(parsedSlides) && parsedSlides.length > 0) {
+                apiData.slides = parsedSlides;
+            }
+        } catch (e) {
+            console.error("Gagal parsing VITE_HOME_SLIDES", e);
+        }
+    }
+
+    // Inject Profile from ENV
+    const envProfileTitle = (import.meta as any).env.VITE_PROFILE_TITLE;
+    const envProfileDesc = (import.meta as any).env.VITE_PROFILE_DESC;
+    const envProfileImage = (import.meta as any).env.VITE_PROFILE_IMAGE;
+
+    if (envProfileTitle || envProfileDesc) {
+        apiData.profile = {
+            title: envProfileTitle || '',
+            description: envProfileDesc || '',
+            imageUrl: envProfileImage || 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9'
+        };
+    }
+
+    return apiData;
 };
 
 /* ================= CATEGORIES ================= */

@@ -78,9 +78,18 @@ export interface Stat {
   value: string;
 }
 
+
+export interface InstitutionProfile {
+  title: string;
+  subtitle?: string; // Untuk bagian "Profil Institusi" kecil di atas
+  description: string;
+  imageUrl: string;
+}
+
 export interface HomeData {
   stats: Record<string, Stat[]>;
   slides: Slide[];
+  profile?: InstitutionProfile;
 }
 
 export interface CategoryData {

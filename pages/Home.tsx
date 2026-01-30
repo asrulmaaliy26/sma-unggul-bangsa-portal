@@ -4,7 +4,7 @@ import { MOCK_JOURNALS } from '../constants'; // Fallback
 import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap, Building, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
-import { Slide, Stat, NewsItem, JournalItem } from '../types';
+import { Slide, Stat, NewsItem, JournalItem, InstitutionProfile } from '../types';
 import { fetchHomeData, fetchLatestNews, fetchJournals, fetchBestJournals, fetchNewsWithLimitAndLevel } from '../services/api';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
@@ -14,6 +14,7 @@ const Home: React.FC = () => {
   const theme = LEVEL_CONFIG[activeLevel];
   const [allStats, setAllStats] = useState<Record<string, Stat[]>>({});
   const [slides, setSlides] = useState<Slide[]>([]);
+  const [profile, setProfile] = useState<InstitutionProfile | null>(null);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [journals, setJournals] = useState<JournalItem[]>([]);
   const [bestJournals, setBestJournals] = useState<JournalItem[]>([]);
@@ -29,6 +30,7 @@ const Home: React.FC = () => {
         ]);
         setAllStats(homeData.stats);
         setSlides(homeData.slides);
+        if (homeData.profile) setProfile(homeData.profile);
         setJournals(journalsData);
         setBestJournals(bestJournalsData);
       } catch (error) {
@@ -126,13 +128,15 @@ const Home: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center gap-16">
           <div className="md:w-1/2">
             <div className={`inline-flex items-center gap-2 bg-slate-50 ${theme.text} px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider mb-6`}>
-              <Star className={`w-4 h-4 fill-current`} /> Profil Institusi
+              <Star className={`w-4 h-4 fill-current`} /> {profile?.subtitle || 'Profil Institusi'}
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-8 leading-[1.1]">
-              Membangun Peradaban dari <span className={theme.text}>Pendidikan Qurani</span>.
+              {profile ? profile.title : (
+                <>Membangun Peradaban dari <span className={theme.text}>Pendidikan Qurani</span>.</>
+              )}
             </h2>
             <p className="text-slate-600 leading-relaxed text-lg mb-10">
-              Integrasi kurikulum modern dengan nilai-nilai luhur keislaman untuk mencetak generasi yang cerdas akal dan mulia akhlak.
+              {profile ? profile.description : 'Integrasi kurikulum modern dengan nilai-nilai luhur keislaman untuk mencetak generasi yang cerdas akal dan mulia akhlak.'}
             </p>
 
             <Link to="/tentang/profil" className={`inline-flex items-center gap-3 ${theme.bg} text-white px-8 py-4 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl group`}>
@@ -142,7 +146,11 @@ const Home: React.FC = () => {
 
           <div className="md:w-1/2 relative">
             <div className="relative z-10 rounded-[3.5rem] overflow-hidden shadow-2xl border-8 border-white">
-              <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" alt="Pendidikan" className="w-full h-full object-cover min-h-[500px]" />
+              <img
+                src={profile ? profile.imageUrl : "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9"}
+                alt="Pendidikan"
+                className="w-full h-full object-cover min-h-[500px]"
+              />
             </div>
           </div>
         </div>
