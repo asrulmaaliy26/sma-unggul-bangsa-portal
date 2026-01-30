@@ -748,6 +748,30 @@ export const deleteProject = async (id: string | number): Promise<DeleteResponse
     return data as DeleteResponse;
 };
 
+export const deleteProjectDocument = async (projectId: string | number, documentUrl: string): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/document`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ document_url: documentUrl })
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal menghapus dokumen: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal menghapus dokumen: (${response.status})`);
+    }
+
+    return data as DeleteResponse;
+};
+
 export const deleteJournal = async (id: string | number): Promise<DeleteResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/journals/${id}`, {
         method: 'DELETE',

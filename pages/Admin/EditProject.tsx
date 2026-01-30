@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Layers, User, Image as ImageIcon, AlignLeft, Tag, FileText, Trash2, Plus, Loader2 } from 'lucide-react';
 import { EducationLevel, ProjectDocument } from '../../types';
-import { fetchProjectCategories, fetchProjectDetail, updateProject } from '../../services/api';
+import { fetchProjectCategories, fetchProjectDetail, updateProject, deleteProjectDocument } from '../../services/api';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
 
 interface NewDocument {
@@ -110,6 +110,20 @@ const EditProject: React.FC = () => {
    const removeNewDocumentField = (index: number) => {
       const newDocs = newDocuments.filter((_, i) => i !== index);
       setNewDocuments(newDocs);
+   };
+
+   const handleDeleteExistingDocument = async (doc: ProjectDocument) => {
+      if (!confirm(`Apakah Anda yakin ingin menghapus dokumen "${doc.title}"?`)) return;
+
+      try {
+         await deleteProjectDocument(projectId, doc.url);
+         // Remove from state
+         setExistingDocuments(prev => prev.filter(d => d.url !== doc.url));
+         alert('Dokumen berhasil dihapus');
+      } catch (error: any) {
+         console.error('Error deleting document:', error);
+         alert(error.message || 'Gagal menghapus dokumen');
+      }
    };
 
    const handleSubmit = async (e: React.FormEvent) => {
@@ -298,7 +312,17 @@ const EditProject: React.FC = () => {
                                     </a>
                                  </div>
                               </div>
-                              <span className="text-[10px] bg-slate-200 px-2 py-1 rounded uppercase font-bold text-slate-500">{doc.type}</span>
+                              <div className="flex items-center gap-3">
+                                 <span className="text-[10px] bg-slate-200 px-2 py-1 rounded uppercase font-bold text-slate-500">{doc.type}</span>
+                                 <button
+                                    type="button"
+                                    onClick={() => handleDeleteExistingDocument(doc)}
+                                    className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                                    title="Hapus Dokumen"
+                                 >
+                                    <Trash2 className="w-4 h-4" />
+                                 </button>
+                              </div>
                            </div>
                         ))}
                      </div>
