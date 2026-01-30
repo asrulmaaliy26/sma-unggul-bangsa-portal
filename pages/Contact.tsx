@@ -56,16 +56,16 @@ const Contact: React.FC = () => {
    };
 
    return (
-      <div className="max-w-7xl mx-auto px-4 py-20">
-         <div className="flex flex-col lg:flex-row gap-20">
+      <div className="max-w-7xl mx-auto px-4 py-10 md:py-20">
+         <div className="flex flex-col lg:flex-row gap-10 md:gap-20">
             {/* Info Side */}
             <div className="lg:w-1/3">
-               <h1 className="text-4xl font-extrabold text-slate-900 mb-8">Hubungi Kami</h1>
-               <p className="text-slate-500 mb-12">
+               <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 md:mb-8">Hubungi Kami</h1>
+               <p className="text-slate-500 mb-8 md:mb-12">
                   Punya pertanyaan atau ingin memberikan masukan? Kami siap mendengar suara Anda untuk pelayanan yang lebih baik.
                </p>
 
-               <div className="space-y-8">
+               <div className="space-y-6 md:space-y-8">
                   <div className="flex gap-4">
                      <div className="bg-blue-50 p-4 rounded-2xl text-blue-600"><Phone /></div>
                      <div>
@@ -93,7 +93,7 @@ const Contact: React.FC = () => {
 
             {/* Form Side */}
             <div className="lg:w-2/3">
-               <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border border-slate-50">
+               <div className="bg-white p-6 md:p-12 rounded-[2.5rem] md:rounded-[3rem] shadow-xl border border-slate-50">
                   <div className="flex gap-4 mb-10">
                      <button
                         onClick={() => { setFormType('contact'); setStatus(null); }}

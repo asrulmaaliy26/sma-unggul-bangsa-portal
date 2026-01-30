@@ -114,10 +114,11 @@ const News: React.FC = () => {
   }, [filteredNews, LEVEL_CONFIG, theme]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-20">
+    <div className="max-w-7xl mx-auto px-4 py-10 md:py-20">
       <div className="flex flex-col md:flex-row gap-12">
         {/* Main Feed */}
         <div className="md:w-2/3 space-y-12">
+          {/* ... content ... */}
           <header>
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-12 h-1 bg-islamic-gold-500 rounded-full`}></div>
@@ -166,7 +167,6 @@ const News: React.FC = () => {
               </div>
             </div>
           </header>
-
           <div className="space-y-10">
             {newsLoading && limit === 6 ? (
               <div className="space-y-10">
@@ -216,11 +216,11 @@ const News: React.FC = () => {
 
         <aside className="md:w-1/3">
           <div className="sticky top-28 space-y-10">
-            <div className="bg-white p-12 rounded-[3.5rem] shadow-sm border border-slate-100">
-              <h3 className="text-xl font-black text-slate-900 mb-10 flex items-center">
+            <div className="bg-white p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] shadow-sm border border-slate-100">
+              <h3 className="text-xl font-black text-slate-900 mb-6 md:mb-10 flex items-center">
                 <TrendingUp className="text-islamic-gold-500 mr-4 w-7 h-7" /> Populer
               </h3>
-              <div className="space-y-10">
+              <div className="space-y-6 md:space-y-10">
                 {trendingNews.map((news, index) => (
                   <Link to={`/berita/${news.id}`} key={news.id} className="flex gap-5 group">
                     <span className="text-5xl font-black text-slate-50 group-hover:text-islamic-green-100 transition-colors leading-none">{(index + 1).toString().padStart(2, '0')}</span>
@@ -236,7 +236,7 @@ const News: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-islamic-green-900 p-12 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl">
+            <div className="bg-islamic-green-900 p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl">
               <div className="relative z-10">
                 <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8 border border-white/10">
                   <Check className="w-8 h-8 text-islamic-gold-500" />

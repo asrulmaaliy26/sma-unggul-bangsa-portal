@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchNewsDetail, fetchNews } from '../services/api';
+import { useCache } from '../context/CacheContext';
 import { NewsItem } from '../types';
 import { ArrowLeft, Calendar, Eye, ZoomIn, X, User, Share2, Bookmark } from 'lucide-react';
 import { LevelContext } from '../App';
@@ -12,9 +13,11 @@ const NewsDetail: React.FC = () => {
     const [news, setNews] = useState<NewsItem | null>(null);
     const [relatedNews, setRelatedNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [imgLoaded, setImgLoaded] = useState(false);
     const [error, setError] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+    const { homeCache } = useCache();
     const { activeLevel } = useContext(LevelContext);
     const LEVEL_CONFIG = useLevelConfig();
     const theme = LEVEL_CONFIG[activeLevel];
@@ -22,23 +25,41 @@ const NewsDetail: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             if (!id) return;
-            setLoading(true);
+
+            // 1. Optimistic Cache Check
+            const cachedItem = homeCache.allNews.find(n => n.id === id) || homeCache.news.find(n => n.id === id);
+
+            if (cachedItem) {
+                setNews(cachedItem);
+                setLoading(false);
+            } else {
+                setLoading(true);
+            }
+
+            // 2. Initial Related News from Cache
+            let sourceForRelated = homeCache.allNews.length > 0 ? homeCache.allNews : homeCache.news;
+            if (sourceForRelated.length > 0) {
+                setRelatedNews(sourceForRelated.filter(n => n.id !== id).slice(0, 3));
+            }
+
             setError(false);
             try {
-                // Fetch detail
+                // 3. Background Fetch Detail
                 const detail = await fetchNewsDetail(id);
                 setNews(detail);
 
-                // Fetch related (latest news for now)
-                const allNews = await fetchNews();
-                const related = allNews
-                    .filter(n => n.id !== id)
-                    .slice(0, 3);
-                setRelatedNews(related);
+                // 4. Background Fetch Related (only if needed)
+                if (homeCache.allNews.length === 0) {
+                    const allNews = await fetchNews();
+                    const related = allNews
+                        .filter(n => n.id !== id)
+                        .slice(0, 3);
+                    setRelatedNews(related);
+                }
 
             } catch (err) {
                 console.error(err);
-                setError(true);
+                if (!cachedItem) setError(true);
             } finally {
                 setLoading(false);
             }
@@ -46,7 +67,7 @@ const NewsDetail: React.FC = () => {
 
         window.scrollTo(0, 0);
         loadData();
-    }, [id]);
+    }, [id, homeCache.allNews, homeCache.news]);
 
     if (loading) return (
         <div className="flex justify-center items-center min-h-screen bg-slate-50">
@@ -100,10 +121,21 @@ const NewsDetail: React.FC = () => {
                             {/* Main Image Container with 3D-ish Effect */}
                             <div className="rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200 relative z-10 aspect-video transform transition-all duration-700 hover:scale-[1.01]"
                                 onClick={() => setSelectedImage(news.main_image)}>
+
+                                {/* Image Placeholder / Skeleton */}
+                                {!imgLoaded && (
+                                    <div className="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-20">
+                                        <div className="flex flex-col items-center gap-3 opacity-50">
+                                            <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <img
                                     src={news.main_image}
                                     alt={news.title}
-                                    className="w-full h-full object-cover cursor-pointer"
+                                    className={`w-full h-full object-cover cursor-pointer transition-opacity duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                    onLoad={() => setImgLoaded(true)}
                                 />
                                 {/* Overlay Gradient */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>

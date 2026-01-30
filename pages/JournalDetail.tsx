@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchJournalDetail, fetchJournals } from '../services/api';
+import { useCache } from '../context/CacheContext';
 import { JournalItem } from '../types';
 import { ArrowLeft, ArrowRight, Download, FileText, User, GraduationCap, Star, BookOpen, Quote } from 'lucide-react';
 
 const JournalDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
+   const { homeCache } = useCache();
    const [journal, setJournal] = useState<JournalItem | null>(null);
    const [recommendedJournals, setRecommendedJournals] = useState<JournalItem[]>([]);
    const [loading, setLoading] = useState(true);
@@ -15,24 +17,45 @@ const JournalDetail: React.FC = () => {
    useEffect(() => {
       const loadData = async () => {
          if (!id) return;
-         setLoading(true);
+
+         // 1. Optimistic Cache Check
+         const cachedItem = homeCache.allJournals.find(j => j.id === id)
+            || homeCache.journals.find(j => j.id === id)
+            || homeCache.bestJournals.find(j => j.id === id);
+
+         if (cachedItem) {
+            setJournal(cachedItem);
+            setLoading(false);
+         } else {
+            setLoading(true);
+         }
+
+         // 2. Initial Recommended from Cache
+         let sourceRecommended = homeCache.allJournals.length > 0 ? homeCache.allJournals : homeCache.journals;
+         if (sourceRecommended.length > 0) {
+            setRecommendedJournals(sourceRecommended.filter(j => j.id !== id).slice(0, 3));
+         }
+
          setError(false);
          try {
-            const [detail, list] = await Promise.all([
-               fetchJournalDetail(id),
-               fetchJournals()
-            ]);
+            // 3. Background Fetch Detail
+            const detail = await fetchJournalDetail(id);
             setJournal(detail);
-            setRecommendedJournals(list.filter(j => j.id !== id).slice(0, 3));
+
+            // 4. Background Fetch List (only if needed)
+            if (homeCache.allJournals.length === 0) {
+               const list = await fetchJournals();
+               setRecommendedJournals(list.filter(j => j.id !== id).slice(0, 3));
+            }
          } catch (err) {
             console.error(err);
-            setError(true);
+            if (!cachedItem) setError(true);
          } finally {
             setLoading(false);
          }
       };
       loadData();
-   }, [id]);
+   }, [id, homeCache.allJournals, homeCache.journals, homeCache.bestJournals]);
 
    if (loading) return (
       <div className="flex justify-center py-40">

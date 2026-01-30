@@ -97,8 +97,8 @@ const Journals: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-20">
-      <header className="mb-20">
+    <div className="max-w-7xl mx-auto px-4 py-10 md:py-20">
+      <header className="mb-10 md:mb-20">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-1 bg-islamic-gold-500 rounded-full"></div>
           <span className="text-xs font-black uppercase tracking-[0.3em] text-islamic-green-600">Publikasi Akademik</span>

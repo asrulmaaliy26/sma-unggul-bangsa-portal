@@ -12,6 +12,7 @@ const Navbar: React.FC = () => {
   const LEVEL_CONFIG = useLevelConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isMobileAboutOpen, setIsMobileAboutOpen] = useState(false);
   const [isLevelSelectorOpen, setIsLevelSelectorOpen] = useState(false);
   const location = useLocation();
 
@@ -177,6 +178,30 @@ const Navbar: React.FC = () => {
               {link.name}
             </Link>
           ))}
+
+          {/* Mobile About Dropdown */}
+          <div className="rounded-xl overflow-hidden">
+            <button
+              onClick={() => setIsMobileAboutOpen(!isMobileAboutOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-black rounded-xl transition-all ${location.pathname.startsWith('/tentang') || isMobileAboutOpen ? 'bg-slate-100 text-slate-900' : 'text-slate-700 bg-slate-50'}`}
+            >
+              Tentang
+              <ChevronDown className={`w-4 h-4 transition-transform ${isMobileAboutOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <div className={`space-y-1 pl-4 pr-2 overflow-hidden transition-all duration-300 ease-in-out ${isMobileAboutOpen ? 'max-h-96 opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+              {aboutLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`block px-4 py-2 text-xs font-bold rounded-lg transition-colors ${isActive(link.path) ? 'text-islamic-gold-600 bg-islamic-gold-50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
           <a
             href="https://ppdb.almannan.id/"
             target="_blank"

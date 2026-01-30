@@ -2,37 +2,59 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProjectDetail, fetchProjects } from '../services/api';
+import { useCache } from '../context/CacheContext';
 import { ProjectItem } from '../types';
 import { ArrowLeft, ArrowRight, User, Calendar, Lightbulb, Zap, Rocket, FileText, Download } from 'lucide-react';
 
 const ProjectDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
+   const { homeCache } = useCache();
    const [project, setProject] = useState<ProjectItem | null>(null);
    const [otherProjects, setOtherProjects] = useState<ProjectItem[]>([]);
    const [loading, setLoading] = useState(true);
+   const [imgLoaded, setImgLoaded] = useState(false);
    const [error, setError] = useState(false);
 
    useEffect(() => {
       const loadData = async () => {
          if (!id) return;
-         setLoading(true);
+
+         // 1. Optimistic Cache Check
+         const cachedItem = homeCache.allProjects.find(p => p.id === id) || homeCache.projects.find(p => p.id === id);
+
+         if (cachedItem) {
+            setProject(cachedItem);
+            setLoading(false);
+         } else {
+            setLoading(true);
+         }
+
+         // 2. Initial Other Projects from Cache
+         let sourceForOther = homeCache.allProjects.length > 0 ? homeCache.allProjects : homeCache.projects;
+         if (sourceForOther.length > 0) {
+            setOtherProjects(sourceForOther.filter(p => p.id !== id).slice(0, 3));
+         }
+
          setError(false);
          try {
-            const [detail, list] = await Promise.all([
-               fetchProjectDetail(id),
-               fetchProjects()
-            ]);
+            // 3. Background Fetch Detail
+            const detail = await fetchProjectDetail(id);
             setProject(detail);
-            setOtherProjects(list.filter(p => p.id !== id).slice(0, 3));
+
+            // 4. Background Fetch List (only if needed)
+            if (homeCache.allProjects.length === 0) {
+               const list = await fetchProjects();
+               setOtherProjects(list.filter(p => p.id !== id).slice(0, 3));
+            }
          } catch (err) {
             console.error(err);
-            setError(true);
+            if (!cachedItem) setError(true);
          } finally {
             setLoading(false);
          }
       };
       loadData();
-   }, [id]);
+   }, [id, homeCache.allProjects, homeCache.projects]);
 
    if (loading) return (
       <div className="flex justify-center py-40">
@@ -76,7 +98,19 @@ const ProjectDetail: React.FC = () => {
                      </div>
                   </div>
 
-                  <img src={project.imageUrl} className="w-full h-[400px] object-cover rounded-3xl mb-10 shadow-lg" alt={project.title} />
+                  <div className="relative rounded-3xl overflow-hidden mb-10 shadow-lg aspect-video bg-slate-100">
+                     {!imgLoaded && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                           <div className="w-12 h-12 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin"></div>
+                        </div>
+                     )}
+                     <img
+                        src={project.imageUrl}
+                        className={`w-full h-full object-cover transition-opacity duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        alt={project.title}
+                        onLoad={() => setImgLoaded(true)}
+                     />
+                  </div>
 
                   <div className="space-y-8 text-slate-700">
                      <div>
