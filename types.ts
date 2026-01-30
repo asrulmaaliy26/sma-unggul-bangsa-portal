@@ -11,6 +11,8 @@ export interface NewsItem {
   main_image: string;
   category: string;
   education_level: EducationLevel;
+  jenjang: EducationLevel;
+  level?: string;
   gallery: string[];
 }
 

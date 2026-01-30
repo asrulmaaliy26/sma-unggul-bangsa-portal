@@ -530,8 +530,11 @@ export const updateNews = async (payload: UpdateNewsPayload): Promise<CreateNews
         });
     }
 
+    // Laravel PUT/PATCH file upload workaround
+    formData.append('_method', 'PUT');
+
     const response = await fetch(`${API_BASE_URL}/api/news/${payload.id}`, {
-        method: 'PUT',
+        method: 'POST',
         body: formData,
         headers: {
             'Accept': 'application/json'
@@ -593,8 +596,11 @@ export const updateProject = async (payload: UpdateProjectPayload): Promise<Crea
         }
     }
 
+    // Laravel PUT/PATCH file upload workaround
+    formData.append('_method', 'PUT');
+
     const response = await fetch(`${API_BASE_URL}/api/projects/${payload.id}`, {
-        method: 'PUT',
+        method: 'POST',
         body: formData,
         headers: {
             'Accept': 'application/json'
@@ -640,8 +646,11 @@ export const updateJournal = async (payload: UpdateJournalPayload): Promise<Crea
         formData.append('documentUrl', payload.documentUrl);
     }
 
+    // Laravel PUT/PATCH file upload workaround
+    formData.append('_method', 'PUT');
+
     const response = await fetch(`${API_BASE_URL}/api/journals/${payload.id}`, {
-        method: 'PUT',
+        method: 'POST',
         body: formData,
         headers: {
             'Accept': 'application/json'
@@ -662,4 +671,76 @@ export const updateJournal = async (payload: UpdateJournalPayload): Promise<Crea
     }
 
     return data as CreateJournalResponse;
+};
+
+// ==================== DELETE FUNCTIONS ====================
+
+export interface DeleteResponse {
+    message: string;
+}
+
+export const deleteNews = async (id: string | number): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/news/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal menghapus berita: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal menghapus berita: (${response.status})`);
+    }
+
+    return data as DeleteResponse;
+};
+
+export const deleteProject = async (id: string | number): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal menghapus proyek: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal menghapus proyek: (${response.status})`);
+    }
+
+    return data as DeleteResponse;
+};
+
+export const deleteJournal = async (id: string | number): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/journals/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal menghapus jurnal: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal menghapus jurnal: (${response.status})`);
+    }
+
+    return data as DeleteResponse;
 };

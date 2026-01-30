@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Newspaper, Plus, Search, Edit3, Trash2, ArrowLeft, ExternalLink, RotateCcw } from 'lucide-react';
-import { fetchNews, fetchNewsCategories } from '../../services/api';
+import { fetchNews, fetchNewsCategories, deleteNews } from '../../services/api';
 import { NewsItem } from '../../types';
 import Pagination from '../../components/Pagination';
 
@@ -66,6 +66,25 @@ const ManageNews: React.FC = () => {
       sessionStorage.removeItem(CACHE_KEY_CATS);
       sessionStorage.removeItem(CACHE_TIMESTAMP);
       window.location.reload();
+   };
+
+   const handleDelete = async (id: string) => {
+      if (!window.confirm('Apakah Anda yakin ingin menghapus berita ini?')) return;
+
+      try {
+         await deleteNews(id);
+
+         const newNews = news.filter(item => item.id !== id);
+         setNews(newNews);
+
+         // Update cache
+         sessionStorage.setItem(CACHE_KEY_NEWS, JSON.stringify(newNews));
+
+         alert('Berita berhasil dihapus');
+      } catch (error) {
+         console.error('Error deleting news:', error);
+         alert('Gagal menghapus berita');
+      }
    };
 
    const filteredNews = news.filter(item => {
@@ -176,7 +195,10 @@ const ManageNews: React.FC = () => {
                                     <Link to={`/berita/${item.id}`} className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-islamic-green-600 hover:bg-islamic-green-50 transition-all">
                                        <ExternalLink className="w-4 h-4" />
                                     </Link>
-                                    <button className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                                    <button
+                                       onClick={() => handleDelete(item.id)}
+                                       className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                                    >
                                        <Trash2 className="w-4 h-4" />
                                     </button>
                                  </div>

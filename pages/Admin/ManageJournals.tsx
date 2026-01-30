@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Plus, ArrowLeft, Edit3, Trash2, Star, Tag, ExternalLink, Search, RotateCcw } from 'lucide-react';
-import { fetchJournals, fetchJournalCategories } from '../../services/api';
+import { fetchJournals, fetchJournalCategories, deleteJournal } from '../../services/api';
 import { JournalItem } from '../../types';
 import Pagination from '../../components/Pagination';
 
@@ -67,6 +67,25 @@ const ManageJournals: React.FC = () => {
       sessionStorage.removeItem(CACHE_KEY_CATS);
       sessionStorage.removeItem(CACHE_TIMESTAMP);
       window.location.reload();
+   };
+
+   const handleDelete = async (id: string) => {
+      if (!window.confirm('Apakah Anda yakin ingin menghapus jurnal ini?')) return;
+
+      try {
+         await deleteJournal(id);
+
+         const newJournals = journals.filter(item => item.id !== id);
+         setJournals(newJournals);
+
+         // Update cache
+         sessionStorage.setItem(CACHE_KEY_JOURNALS, JSON.stringify(newJournals));
+
+         alert('Jurnal berhasil dihapus');
+      } catch (error) {
+         console.error('Error deleting journal:', error);
+         alert('Gagal menghapus jurnal');
+      }
    };
 
    const filteredJournals = journals.filter(item => {
@@ -171,7 +190,10 @@ const ManageJournals: React.FC = () => {
                                     <Link to={`/jurnal/${item.id}`} className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-islamic-green-600 hover:bg-islamic-green-50 transition-all">
                                        <ExternalLink className="w-4 h-4" />
                                     </Link>
-                                    <button className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50">
+                                    <button
+                                       onClick={() => handleDelete(item.id)}
+                                       className="p-3 bg-slate-100 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                    >
                                        <Trash2 className="w-4 h-4" />
                                     </button>
                                  </div>
