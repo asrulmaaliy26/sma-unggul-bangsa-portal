@@ -237,9 +237,12 @@ export const createNews = async (payload: CreateNewsPayload): Promise<CreateNews
         });
     }
 
-    const response = await fetch(`${API_BASE_URL}/news`, {
+    const response = await fetch(`${API_BASE_URL}/api/news`, {
         method: 'POST',
         body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
         // Don't set Content-Type header - browser will set it automatically with boundary
     });
 
@@ -257,4 +260,144 @@ export const createNews = async (payload: CreateNewsPayload): Promise<CreateNews
     }
 
     return data as CreateNewsResponse;
+};
+
+export interface CreateProjectPayload {
+    title: string;
+    category: string;
+    description: string;
+    author: string;
+    date: string;
+    jenjang: string;
+    imageUrl?: File;
+    documents?: File[];
+    document_types?: string[];
+    document_titles?: string[];
+}
+
+export interface CreateProjectResponse {
+    message: string;
+    data: ProjectItem;
+}
+
+export const createProject = async (payload: CreateProjectPayload): Promise<CreateProjectResponse> => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append('title', payload.title);
+    formData.append('category', payload.category);
+    formData.append('description', payload.description);
+    formData.append('author', payload.author);
+    formData.append('date', payload.date);
+    formData.append('jenjang', payload.jenjang);
+
+    // Add image
+    if (payload.imageUrl) {
+        formData.append('imageUrl', payload.imageUrl);
+    }
+
+    // Add documents with metadata
+    if (payload.documents && payload.documents.length > 0) {
+        payload.documents.forEach((file) => {
+            formData.append('documents[]', file);
+        });
+
+        // Add document types
+        if (payload.document_types && payload.document_types.length > 0) {
+            payload.document_types.forEach((type) => {
+                formData.append('document_types[]', type);
+            });
+        }
+
+        // Add document titles
+        if (payload.document_titles && payload.document_titles.length > 0) {
+            payload.document_titles.forEach((title) => {
+                formData.append('document_titles[]', title);
+            });
+        }
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/projects`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal membuat proyek: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || `Gagal membuat proyek: (${response.status})`
+        );
+    }
+
+    return data as CreateProjectResponse;
+};
+
+export interface CreateJournalPayload {
+    title: string;
+    category: string;
+    abstract: string;
+    author: string;
+    mentor: string;
+    score: number;
+    date: string;
+    jenjang: string;
+    is_best: boolean;
+    documentUrl?: File;
+}
+
+export interface CreateJournalResponse {
+    message: string;
+    data: JournalItem;
+}
+
+export const createJournal = async (payload: CreateJournalPayload): Promise<CreateJournalResponse> => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append('title', payload.title);
+    formData.append('category', payload.category);
+    formData.append('abstract', payload.abstract);
+    formData.append('author', payload.author);
+    formData.append('mentor', payload.mentor);
+    formData.append('score', payload.score.toString());
+    formData.append('date', payload.date);
+    formData.append('jenjang', payload.jenjang);
+    formData.append('is_best', payload.is_best ? '1' : '0');
+
+    // Add PDF document if provided
+    if (payload.documentUrl) {
+        formData.append('documentUrl', payload.documentUrl);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/journals`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal membuat jurnal: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || `Gagal membuat jurnal: (${response.status})`
+        );
+    }
+
+    return data as CreateJournalResponse;
 };

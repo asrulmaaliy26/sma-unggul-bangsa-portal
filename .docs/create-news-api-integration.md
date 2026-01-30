@@ -4,8 +4,9 @@
 Halaman CreateNews telah diintegrasikan dengan API backend untuk mengirim data berita dengan format **form-data** yang mendukung upload file gambar.
 
 ## API Endpoint
-- **URL**: `POST http://localhost:8000/news`
+- **URL**: `POST http://localhost:8000/api/news`
 - **Content-Type**: `multipart/form-data`
+- **Headers**: `Accept: application/json`
 
 ## Request Fields
 
@@ -14,8 +15,8 @@ Halaman CreateNews telah diintegrasikan dengan API backend untuk mengirim data b
 - `excerpt` - Ringkasan singkat berita
 - `content` - Konten lengkap berita
 - `date` - Tanggal publikasi (format: YYYY-MM-DD)
-- `category` - Kategori berita (Akademik, Kegiatan, Pengumuman, Prestasi)
-- `jenjang` - Jenjang pendidikan (TK, MI, SMP, MA, KAMPUS)
+- `category` - Kategori berita (Prestasi, Kegiatan, Akademik, Pengumuman, Wisuda, Seminar, Lainnya)
+- `jenjang` - Jenjang pendidikan dalam **lowercase** (tk, mi, smp, ma, stai)
 
 ### Text Fields (Optional)
 - `level` - Tingkat prestasi (Nasional, Internasional, Provinsi) - hanya untuk kategori Prestasi
@@ -130,7 +131,8 @@ Halaman CreateNews telah diintegrasikan dengan API backend untuk mengirim data b
 
 ```
 Method: POST
-URL: http://localhost:8000/news
+URL: http://localhost:8000/api/news
+Headers: Accept: application/json
 Body: form-data
 
 Fields:
@@ -139,16 +141,23 @@ Fields:
 - content: "Siswa Madrasah Aliyah berhasil meraih juara..."
 - date: "2024-05-24"
 - category: "Prestasi"
-- jenjang: "MA"
+- jenjang: "ma" (lowercase!)
 - level: "Nasional"
 - main_image: [Select File]
 - gallery[]: [Select File] (can select multiple)
 ```
 
+## Testing with HTML
+
+Buka file `.docs/test-api-news.html` di browser untuk testing dengan UI yang lebih user-friendly.
+
 ## Notes
 
-- Date is automatically set to today's date
-- Level field is only sent when category is "Prestasi"
-- Files are optional - news can be created without images
-- Gallery accepts multiple files at once
-- All file inputs accept image/* types only
+- **API Endpoint**: Menggunakan `/api/news` (bukan `/news`)
+- **Jenjang Format**: Harus lowercase (tk, mi, smp, ma, stai)
+- **Date**: Automatically set to today's date
+- **Level**: Field is only sent when category is "Prestasi"
+- **Files**: Optional - news can be created without images
+- **Gallery**: Accepts multiple files at once
+- **All file inputs**: Accept image/* types only
+- **Categories**: Prestasi, Kegiatan, Akademik, Pengumuman, Wisuda, Seminar, Lainnya

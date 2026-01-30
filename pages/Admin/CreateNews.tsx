@@ -33,7 +33,7 @@ const CreateNews: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
-  const [category, setCategory] = useState<'Akademik' | 'Kegiatan' | 'Pengumuman' | 'Prestasi'>('Kegiatan');
+  const [category, setCategory] = useState<'Prestasi' | 'Kegiatan' | 'Akademik' | 'Pengumuman' | 'Wisuda' | 'Seminar' | 'Lainnya'>('Prestasi');
   const [level, setLevel] = useState<'Nasional' | 'Internasional' | 'Provinsi'>('Nasional');
   const [jenjang, setJenjang] = useState<EducationLevel>(activeLevel === 'UMUM' ? 'SMA' : activeLevel);
   const [content, setContent] = useState('');
@@ -120,7 +120,7 @@ const CreateNews: React.FC = () => {
         content,
         date: today,
         category,
-        jenjang,
+        jenjang: jenjang.toLowerCase(), // Convert to lowercase for API
         level: category === 'Prestasi' ? level : undefined,
         main_image: mainImage || undefined,
         gallery: validGallery.length > 0 ? validGallery : undefined,
@@ -205,10 +205,13 @@ const CreateNews: React.FC = () => {
                     value={category}
                     onChange={(e) => setCategory(e.target.value as any)}
                   >
+                    <option value="Prestasi">Prestasi</option>
                     <option value="Kegiatan">Kegiatan</option>
                     <option value="Akademik">Akademik</option>
                     <option value="Pengumuman">Pengumuman</option>
-                    <option value="Prestasi">Prestasi</option>
+                    <option value="Wisuda">Wisuda</option>
+                    <option value="Seminar">Seminar</option>
+                    <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
                 <div>

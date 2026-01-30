@@ -50,7 +50,7 @@ const News: React.FC = () => {
   const filteredNews = news.filter(n => {
     const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = activeLevel === 'UMUM' ? true : n.education_level === activeLevel;
+    const matchesLevel = activeLevel === 'UMUM' ? true : n.jenjang === activeLevel;
     const matchesCategory = activeCategory === 'Semua' ? true : n.category === activeCategory;
 
     return matchesSearch && matchesLevel && matchesCategory;
@@ -63,7 +63,7 @@ const News: React.FC = () => {
   );
 
   const trendingNews = [...news]
-    .filter(n => activeLevel === 'UMUM' ? true : n.education_level === activeLevel)
+    .filter(n => activeLevel === 'UMUM' ? true : n.jenjang === activeLevel)
     .sort((a, b) => b.views - a.views)
     .slice(0, 4);
 
@@ -134,15 +134,15 @@ const News: React.FC = () => {
                 {paginatedNews.map(news => {
                   // const newsTheme = LEVEL_CONFIG[news.jenjang];
                   const newsTheme =
-                    news.education_level === 'SMA'
+                    news.jenjang === 'SMA'
                       ? LEVEL_CONFIG['MA']
-                      : LEVEL_CONFIG[news.education_level];
+                      : LEVEL_CONFIG[news.jenjang];
                   return (
                     <article key={news.id} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-slate-100 flex flex-col sm:flex-row group">
                       <div className="sm:w-2/5 h-64 sm:h-auto overflow-hidden relative">
                         <img src={news.main_image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
                         <div className={`absolute top-6 left-6 ${newsTheme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl`}>
-                          {news.education_level}
+                          {news.jenjang}
                         </div>
                       </div>
                       <div className="sm:w-3/5 p-10 flex flex-col justify-between">
@@ -209,7 +209,7 @@ const News: React.FC = () => {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-islamic-green-600 transition-colors line-clamp-2">{news.title}</h4>
                       <div className="flex items-center gap-3 mt-3">
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${LEVEL_CONFIG[news.education_level].bg} text-white uppercase tracking-widest`}>{news.education_level}</span>
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${LEVEL_CONFIG[news.jenjang].bg} text-white uppercase tracking-widest`}>{news.jenjang}</span>
                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{news.views} views</span>
                       </div>
                     </div>
