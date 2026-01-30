@@ -1,7 +1,7 @@
 import { HomeData, CategoryData, LevelConfigData, AboutData, NewsItem, ProjectItem, JournalItem, Facility } from '../types';
 
-const API_BASE_URL = 'https://admin.staialmannan.ac.id';
-// const API_BASE_URL = 'http://localhost:8000';
+// const API_BASE_URL = 'https://admin.staialmannan.ac.id';
+const API_BASE_URL = 'http://localhost:8000';
 
 /**
  * Helper fetch dengan error detail
@@ -184,25 +184,6 @@ export const fetchLevelConfig = async (): Promise<LevelConfigData> => {
     return data;
 };
 
-/* ================= ABOUT ================= */
-
-export const fetchAboutData = async (jenjang: string): Promise<AboutData> => {
-    if (!jenjang) {
-        throw new Error('Jenjang tidak boleh kosong');
-    }
-
-    const json = await fetchJson<any>(
-        `${API_BASE_URL}/about/${jenjang.toLowerCase()}`,
-        `Gagal mengambil data About untuk jenjang ${jenjang}`
-    );
-
-    if (!json.data) {
-        throw new Error(`Data About jenjang ${jenjang} tidak ditemukan`);
-    }
-
-    return json.data as AboutData;
-};
-
 /* ================= CONTENT (News, Projects, Journals, Facilities) ================= */
 
 // LISTS
@@ -235,6 +216,14 @@ export const fetchNewsWithLimitAndLevel = async (limit: number, level: string): 
     const json = await fetchJson<{ data: NewsItem[] }>(
         `${API_BASE_URL}/news/limit/${limit}/${level}`,
         `Gagal mengambil ${limit} berita untuk jenjang ${level}`
+    );
+    return json.data;
+};
+
+export const fetchNewsByCategory = async (category: string): Promise<NewsItem[]> => {
+    const json = await fetchJson<{ data: NewsItem[] }>(
+        `${API_BASE_URL}/news/category/${category}`,
+        `Gagal mengambil berita kategori ${category}`
     );
     return json.data;
 };
@@ -826,4 +815,67 @@ export const deleteJournal = async (id: string | number): Promise<DeleteResponse
     }
 
     return data as DeleteResponse;
+};
+
+export interface ContactUsPayload {
+    name: string;
+    contact_info: string;
+    message: string;
+    jenjang: string;
+}
+
+export const submitContactUs = async (payload: ContactUsPayload): Promise<{ message: string }> => {
+    const response = await fetch(`${API_BASE_URL}/api/contact-us`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal mengirim pesan: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal mengirim pesan: (${response.status})`);
+    }
+
+    return data;
+};
+
+export interface ComplaintPayload {
+    name: string;
+    contact_info: string;
+    category: string;
+    message: string;
+    jenjang: string;
+}
+
+export const submitComplaint = async (payload: ComplaintPayload): Promise<{ message: string }> => {
+    const response = await fetch(`${API_BASE_URL}/api/complaints`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal mengirim pengaduan: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal mengirim pengaduan: (${response.status})`);
+    }
+
+    return data;
 };

@@ -2,9 +2,9 @@
 import React, { useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MOCK_NEWS } from '../constants';
-import { fetchAboutData } from '../services/api';
-import { AboutData } from '../types';
-import { Target, Flag, Award, ShieldCheck, Heart, Star, BookOpen, GraduationCap, Calendar, Users, Building } from 'lucide-react';
+import { fetchNewsByCategory } from '../services/api';
+import { AboutData, NewsItem } from '../types';
+import { Target, Flag, Award, ShieldCheck, Heart, Star, BookOpen, GraduationCap, Calendar, Users, Building, Loader2 } from 'lucide-react';
 import { LevelContext } from '../App';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
@@ -15,21 +15,83 @@ const About: React.FC = () => {
   const [aboutData, setAboutData] = React.useState<AboutData | null>(null);
   const [loading, setLoading] = React.useState(true);
 
+  // State for Prestasi
+  const [prestasiData, setPrestasiData] = React.useState<NewsItem[]>([]);
+  const [prestasiLoading, setPrestasiLoading] = React.useState(false);
+
   React.useEffect(() => {
-    const loadData = async () => {
+    const loadData = () => {
       setLoading(true);
       try {
-        const data = await fetchAboutData(activeLevel);
+        // Construct default data locally from ENV variables
+        const envVisi = import.meta.env.VITE_ABOUT_VISI || '';
+        const envHistory = import.meta.env.VITE_ABOUT_HISTORY || '';
+        const envMisiStr = import.meta.env.VITE_ABOUT_MISI;
+        const envStrukturStr = import.meta.env.VITE_ABOUT_STRUKTUR;
+
+        let misi: string[] = [];
+        try {
+          if (envMisiStr) misi = JSON.parse(envMisiStr);
+        } catch (e) {
+          console.error('Error parsing VITE_ABOUT_MISI', e);
+        }
+
+        let struktur = {
+          pimpinan: 'Pimpinan',
+          nama: '-',
+          staff: []
+        };
+        try {
+          if (envStrukturStr) struktur = JSON.parse(envStrukturStr);
+        } catch (e) {
+          console.error('Error parsing VITE_ABOUT_STRUKTUR', e);
+        }
+
+        const data: AboutData = {
+          visi: envVisi,
+          history: envHistory,
+          misi,
+          struktur,
+        };
+
         setAboutData(data);
       } catch (error) {
-        console.error("Failed to load about data", error);
-        // Fallback or empty state could be handled here
+        console.error("Failed to load about data from env", error);
       } finally {
         setLoading(false);
       }
     };
     loadData();
   }, [activeLevel]);
+
+  // Fetch Prestasi Data when section is 'prestasi'
+  React.useEffect(() => {
+    if (section === 'prestasi') {
+      const loadPrestasi = async () => {
+        setPrestasiLoading(true);
+        try {
+          // Fetch raw data for category 'Prestasi'
+          // Note: The category name must match exactly what is in the DB, usually 'Prestasi'
+          const news = await fetchNewsByCategory('Prestasi');
+
+          // Filter by Active Level if not UMUM
+          let filtered = news;
+          if (activeLevel !== 'UMUM') {
+            filtered = news.filter(n => n.jenjang === activeLevel);
+          }
+
+          setPrestasiData(filtered);
+        } catch (error) {
+          console.error("Failed to load prestasi data", error);
+          setPrestasiData([]);
+        } finally {
+          setPrestasiLoading(false);
+        }
+      };
+
+      loadPrestasi();
+    }
+  }, [section, activeLevel]);
 
   const theme = LEVEL_CONFIG[activeLevel];
   const content = aboutData;
@@ -121,7 +183,7 @@ const About: React.FC = () => {
         <div className="md:w-1/2 relative">
           <div className="rounded-[4rem] overflow-hidden shadow-2xl border-[12px] border-white relative z-10">
             <img
-              src={isYayasan ? "https://images.unsplash.com/photo-1541339907198-e08756ebafe3" : "https://images.unsplash.com/photo-1519452632935-41c5991e0a9b"}
+              src={import.meta.env.VITE_ABOUT_IMAGE}
               alt="Profile"
               className="w-full h-full object-cover min-h-[500px]"
             />
@@ -162,15 +224,22 @@ const About: React.FC = () => {
   );
 
   const renderPrestasi = () => {
-    const prestasiNews = isYayasan
-      ? MOCK_NEWS.filter(n => n.category === 'Prestasi')
-      : MOCK_NEWS.filter(n => n.category === 'Prestasi' && n.jenjang === activeLevel);
+    if (prestasiLoading) {
+      return (
+        <div className="flex justify-center py-20">
+          <div className="flex items-center gap-3 text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="font-medium">Memuat data prestasi...</span>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-16 animate-fadeIn">
-        {prestasiNews.length > 0 ? (
+        {prestasiData.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {prestasiNews.map(item => (
+            {prestasiData.map(item => (
               <Link to={`/berita/${item.id}`} key={item.id} className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-50 hover:shadow-2xl transition-all flex flex-col group">
                 <div className="flex justify-between items-start mb-10">
                   <div className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg ${item.level === 'Internasional' ? 'bg-islamic-gold-500 text-white' : theme.bg + ' text-white'

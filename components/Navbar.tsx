@@ -136,10 +136,10 @@ const Navbar: React.FC = () => {
             >
               PPDB
             </a>
-            {/* Mobile menu button 
+            {/* Mobile menu button */}
             <Link to="/contact" className={`${currentTheme.bg} ml-2 text-white px-6 py-3 rounded-full font-bold text-sm hover:brightness-110 transition-all shadow-lg`}>
               Hubungi
-            </Link>*/}
+            </Link>
           </div>
 
           {/* Mobile menu button */}

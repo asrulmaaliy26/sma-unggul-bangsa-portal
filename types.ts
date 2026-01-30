@@ -62,7 +62,7 @@ export interface Achievement {
 export interface Facility {
   id: string;
   name: string;
-  type: 'Ruang' | 'Ekstra';
+  type: string;
   description: string;
   imageUrl: string;
   jenjang: EducationLevel;

@@ -25,8 +25,8 @@ const EditNews: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
-  const [category, setCategory] = useState<'Prestasi' | 'Kegiatan' | 'Akademik' | 'Pengumuman' | 'Wisuda' | 'Seminar' | 'Lainnya'>('Prestasi');
-  const [level, setLevel] = useState<'Nasional' | 'Internasional' | 'Provinsi'>('Nasional');
+  const [category, setCategory] = useState<'Prestasi' | 'Kegiatan' | 'Akademik' | 'Pengumuman'>('Kegiatan');
+  const [level, setLevel] = useState<'Nasional' | 'Internasional' | 'Provinsi' | 'Kabupaten' | 'Kecamatan' | 'Kota' | 'Sekolah'>('Sekolah');
   const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
   const isLocked = DEFAULT_JENJANG !== 'UMUM';
 
@@ -246,9 +246,6 @@ const EditNews: React.FC = () => {
                     <option value="Kegiatan">Kegiatan</option>
                     <option value="Akademik">Akademik</option>
                     <option value="Pengumuman">Pengumuman</option>
-                    <option value="Wisuda">Wisuda</option>
-                    <option value="Seminar">Seminar</option>
-                    <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
                 <div>
@@ -281,6 +278,10 @@ const EditNews: React.FC = () => {
                       <option value="Nasional">Nasional</option>
                       <option value="Internasional">Internasional</option>
                       <option value="Provinsi">Provinsi</option>
+                      <option value="Kabupaten">Kabupaten</option>
+                      <option value="Kecamatan">Kecamatan</option>
+                      <option value="Kota">Kota</option>
+                      <option value="Sekolah">Sekolah</option>
                     </select>
                   </div>
                 )}

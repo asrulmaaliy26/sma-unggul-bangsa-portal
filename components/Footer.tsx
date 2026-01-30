@@ -32,11 +32,15 @@ const Footer: React.FC = () => {
               Membentuk intelektual muslim yang unggul, berkarakter Qurani, dan berdaya saing global melalui pendidikan berkualitas terpadu.
             </p>
             <div className="flex space-x-4">
-              {[Instagram, Facebook, Twitter].map((Icon, idx) => (
-                <button key={idx} className="p-3 bg-white/5 rounded-2xl hover:bg-islamic-gold-500 hover:text-white transition-all border border-white/10">
-                  <Icon className="w-5 h-5" />
-                </button>
-              ))}
+              <a href="https://www.instagram.com/lpialhidayahkauman" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-islamic-gold-500 hover:text-white transition-all border border-white/10">
+                <Instagram className="w-5 h-5" />
+              </a>
+              <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-islamic-gold-500 hover:text-white transition-all border border-white/10">
+                <Facebook className="w-5 h-5" />
+              </a>
+              <button className="p-3 bg-white/5 rounded-2xl hover:bg-islamic-gold-500 hover:text-white transition-all border border-white/10">
+                <Twitter className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
@@ -77,15 +81,19 @@ const Footer: React.FC = () => {
             <ul className="space-y-6 text-sm">
               <li className="flex items-start group">
                 <div className="p-2 bg-white/5 rounded-xl mr-4 group-hover:bg-islamic-gold-500 group-hover:text-white transition-all"><MapPin className="w-5 h-5 text-islamic-gold-500 group-hover:text-inherit" /></div>
-                <span className="font-medium text-white/80 leading-relaxed">Jl. Pendidikan No. 123, Kota Cerdas, Indonesia</span>
+                <a href="https://share.google/6fpKEOeoZkTFmdUKS">
+                  <span className="font-medium text-white/80 leading-relaxed">Jl. KH Hasyim Asyari No.27, Kauman, Kec. Kauman, Kabupaten Tulungagung, Jawa Timur 66261</span>
+                </a>
               </li>
               <li className="flex items-center group">
                 <div className="p-2 bg-white/5 rounded-xl mr-4 group-hover:bg-islamic-gold-500 group-hover:text-white transition-all"><Phone className="w-5 h-5 text-islamic-gold-500 group-hover:text-inherit" /></div>
-                <span className="font-bold text-white">(021) 555-0199</span>
+                <a href="https://wa.me/6285749555505">
+                  <span className="font-bold text-white">085749555505</span>
+                </a>
               </li>
               <li className="flex items-center group">
                 <div className="p-2 bg-white/5 rounded-xl mr-4 group-hover:bg-islamic-gold-500 group-hover:text-white transition-all"><Mail className="w-5 h-5 text-islamic-gold-500 group-hover:text-inherit" /></div>
-                <span className="font-bold text-white">info@smaunggulbangsa.sch.id</span>
+                <span className="font-bold text-white">lpialhidayahkauman@gmail.com</span>
               </li>
             </ul>
           </div>

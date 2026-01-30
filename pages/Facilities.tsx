@@ -11,10 +11,23 @@ import FacilityCard from '../components/FacilityCard';
 import SkeletonFacilityCard from '../components/SkeletonFacilityCard';
 import FacilityModal from '../components/FacilityModal';
 
+import { getDefaultLevel } from '../services/api';
+
+// ... (imports remain)
+
 const Facilities: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
-  const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
+
+  // Initialize filter based on ENV default, respecting the "default saja dari env itu sendiri" rule.
+  // We ignore activeLevel changes (navigation) for the default state of this page.
+  const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>(() => {
+    const def = getDefaultLevel();
+    return def === 'UMUM' ? 'SEMUA' : (def as EducationLevel);
+  });
+
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'fasilitas' | 'ekstra'>('ALL');
+
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,16 +63,18 @@ const Facilities: React.FC = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [subFilter, activeLevel]);
+  }, [subFilter, typeFilter]);
 
-  const effectiveJenjangFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
+  // Purely use the subFilter state, decoupling from activeLevel context enforcement
+  const effectiveJenjangFilter = subFilter;
 
   const filtered = useMemo(() => {
     return facilities.filter(f => {
       const matchesJenjang = effectiveJenjangFilter === 'SEMUA' || f.jenjang === effectiveJenjangFilter;
-      return matchesJenjang;
+      const matchesType = typeFilter === 'ALL' || (f.type && f.type.toLowerCase() === typeFilter);
+      return matchesJenjang && matchesType;
     });
-  }, [facilities, effectiveJenjangFilter]);
+  }, [facilities, effectiveJenjangFilter, typeFilter]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
@@ -103,27 +118,48 @@ const Facilities: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Sidebar Kategori */}
         <aside className="lg:w-72 flex-shrink-0 space-y-8">
-          {/* Level Filter (Hanya di mode UMUM) */}
-          {activeLevel === 'UMUM' && (
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <Layers className="w-3 h-3" /> Jenjang Pendidikan
-              </h3>
-              <div className="space-y-1">
-                {filterOptions.map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setSubFilter(opt)}
-                    className={`w-full text-left px-5 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
-                      }`}
-                  >
-                    {opt === 'SEMUA' ? 'Semua Jenjang' : LEVEL_CONFIG[opt]?.name || opt}
-                    {subFilter === opt && <ChevronRight className="w-3 h-3" />}
-                  </button>
-                ))}
-              </div>
+          {/* Level Filter - Always Visible */}
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Layers className="w-3 h-3" /> Jenjang Pendidikan
+            </h3>
+            <div className="space-y-1">
+              {filterOptions.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setSubFilter(opt)}
+                  className={`w-full text-left px-5 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${subFilter === opt ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                    }`}
+                >
+                  {opt === 'SEMUA' ? 'Semua Jenjang' : LEVEL_CONFIG[opt]?.name || opt}
+                  {subFilter === opt && <ChevronRight className="w-3 h-3" />}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
+
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Zap className="w-3 h-3" /> Jenis Fasilitas
+            </h3>
+            <div className="space-y-1">
+              {[
+                { id: 'ALL', label: 'Semua Jenis' },
+                { id: 'fasilitas', label: 'Fasilitas Umum' },
+                { id: 'ekstra', label: 'Ekstrakurikuler' }
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setTypeFilter(opt.id as any)}
+                  className={`w-full text-left px-5 py-3 rounded-xl text-xs font-black transition-all flex justify-between items-center ${typeFilter === opt.id ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
+                    }`}
+                >
+                  {opt.label}
+                  {typeFilter === opt.id && <ChevronRight className="w-3 h-3" />}
+                </button>
+              ))}
+            </div>
+          </div>
         </aside>
 
         {/* Galeri Fasilitas */}
@@ -148,7 +184,7 @@ const Facilities: React.FC = () => {
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
               <Layout className="w-16 h-16 text-slate-200 mx-auto mb-6" />
               <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Belum ada data fasilitas ditemukan</p>
-              <button onClick={() => { setSubFilter('SEMUA'); }} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Semua Filter</button>
+              <button onClick={() => { setSubFilter('SEMUA'); setTypeFilter('ALL'); }} className="mt-8 text-islamic-green-600 font-black text-xs uppercase tracking-widest hover:underline">Reset Semua Filter</button>
             </div>
           )}
         </div>
