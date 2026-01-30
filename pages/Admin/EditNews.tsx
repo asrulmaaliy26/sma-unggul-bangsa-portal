@@ -140,6 +140,11 @@ const EditNews: React.FC = () => {
         gallery: validGallery.length > 0 ? validGallery : undefined,
       });
 
+      // Clear cache to force reload on ManageNews
+      sessionStorage.removeItem('admin_news_data');
+      sessionStorage.removeItem('admin_news_cats');
+      sessionStorage.removeItem('admin_news_timestamp');
+
       alert(response.message || 'Berita berhasil diperbarui!');
       navigate('/admin/news');
     } catch (error: any) {

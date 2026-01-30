@@ -53,6 +53,11 @@ const EditJournal: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     alert("Perubahan jurnal berhasil disimpan! (Mock)");
+    // Clear cache
+    sessionStorage.removeItem('admin_journals_data');
+    sessionStorage.removeItem('admin_journals_cats');
+    sessionStorage.removeItem('admin_journals_timestamp');
+
     navigate('/admin/journals');
   };
 

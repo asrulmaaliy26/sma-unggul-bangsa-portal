@@ -57,6 +57,11 @@ const EditProject: React.FC = () => {
       // Filter empty documents
       const validDocuments = documents.filter(doc => doc.title.trim() !== '' && doc.url.trim() !== '');
       alert(`Perubahan projek berhasil disimpan with ${validDocuments.length} documents! (Mock)`);
+      // Clear cache
+      sessionStorage.removeItem('admin_projects_data');
+      sessionStorage.removeItem('admin_projects_cats');
+      sessionStorage.removeItem('admin_projects_timestamp');
+
       navigate('/admin/projects');
    };
 

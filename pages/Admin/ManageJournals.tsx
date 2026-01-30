@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Plus, ArrowLeft, Edit3, Trash2, Star, Tag, ExternalLink, Search } from 'lucide-react';
+import { BookOpen, Plus, ArrowLeft, Edit3, Trash2, Star, Tag, ExternalLink, Search, RotateCcw } from 'lucide-react';
 import { fetchJournals, fetchJournalCategories } from '../../services/api';
 import { JournalItem } from '../../types';
+import Pagination from '../../components/Pagination';
 
 const ManageJournals: React.FC = () => {
    const [journals, setJournals] = useState<JournalItem[]>([]);
@@ -14,15 +15,43 @@ const ManageJournals: React.FC = () => {
    const [currentPage, setCurrentPage] = useState(1);
    const itemsPerPage = 6;
 
+   const CACHE_KEY_JOURNALS = 'admin_journals_data';
+   const CACHE_KEY_CATS = 'admin_journals_cats';
+   const CACHE_TIMESTAMP = 'admin_journals_timestamp';
+   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
    useEffect(() => {
       const loadData = async () => {
          try {
+            // Check cache
+            const cachedJournals = sessionStorage.getItem(CACHE_KEY_JOURNALS);
+            const cachedCats = sessionStorage.getItem(CACHE_KEY_CATS);
+            const cachedTime = sessionStorage.getItem(CACHE_TIMESTAMP);
+
+            const isCacheValid = cachedTime && (Date.now() - parseInt(cachedTime) < CACHE_DURATION);
+
+            if (cachedJournals && cachedCats && isCacheValid) {
+               setJournals(JSON.parse(cachedJournals));
+               setCategories(JSON.parse(cachedCats));
+               setLoading(false);
+               return;
+            }
+
+            // Fetch new data
             const [data, cats] = await Promise.all([
                fetchJournals(),
                fetchJournalCategories()
             ]);
+
+            const catsWithAll = ['Semua Kategori', ...cats];
             setJournals(data);
-            setCategories(['Semua Kategori', ...cats]);
+            setCategories(catsWithAll);
+
+            // Save to cache
+            sessionStorage.setItem(CACHE_KEY_JOURNALS, JSON.stringify(data));
+            sessionStorage.setItem(CACHE_KEY_CATS, JSON.stringify(catsWithAll));
+            sessionStorage.setItem(CACHE_TIMESTAMP, Date.now().toString());
+
          } catch (error) {
             console.error('Error fetching journals:', error);
          } finally {
@@ -31,6 +60,14 @@ const ManageJournals: React.FC = () => {
       };
       loadData();
    }, []);
+
+   const handleRefresh = () => {
+      setLoading(true);
+      sessionStorage.removeItem(CACHE_KEY_JOURNALS);
+      sessionStorage.removeItem(CACHE_KEY_CATS);
+      sessionStorage.removeItem(CACHE_TIMESTAMP);
+      window.location.reload();
+   };
 
    const filteredJournals = journals.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -56,9 +93,18 @@ const ManageJournals: React.FC = () => {
                   <p className="text-slate-500 font-medium">Manajemen karya tulis ilmiah siswa.</p>
                </div>
             </div>
-            <Link to="/admin/journals/create" className="flex items-center gap-2 bg-islamic-green-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-islamic-green-700 transition-all shadow-xl">
-               <Plus className="w-5 h-5" /> Tambah Jurnal
-            </Link>
+            <div className="flex items-center gap-3">
+               <button
+                  onClick={handleRefresh}
+                  className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-islamic-green-600 hover:rotate-180 transition-all duration-500 shadow-sm"
+                  title="Refresh Data"
+               >
+                  <RotateCcw className="w-5 h-5" />
+               </button>
+               <Link to="/admin/journals/create" className="flex items-center gap-2 bg-islamic-green-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-islamic-green-700 transition-all shadow-xl">
+                  <Plus className="w-5 h-5" /> Tambah Jurnal
+               </Link>
+            </div>
          </header>
 
          {/* Search & Filter Bar */}
@@ -140,24 +186,17 @@ const ManageJournals: React.FC = () => {
                   </tbody>
                </table>
             </div>
-            <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex justify-between items-center">
-               <p className="text-xs font-bold text-slate-400">Menampilkan {Math.min(itemsPerPage * currentPage, journals.length)} dari {journals.length} jurnal</p>
-               <div className="flex gap-2">
-                  <button
-                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                     disabled={currentPage === 1}
-                     className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
-                  >
-                     Sebelumnya
-                  </button>
-                  <button className="px-4 py-2 bg-islamic-green-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-islamic-green-100">{currentPage}</button>
-                  <button
-                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                     disabled={currentPage === totalPages}
-                     className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
-                  >
-                     Selanjutnya
-                  </button>
+            <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+               <p className="text-xs font-bold text-slate-400">
+                  Menampilkan {Math.min(itemsPerPage * currentPage, filteredJournals.length)} dari {filteredJournals.length} jurnal
+               </p>
+               <div className="-mt-16 md:mt-0">
+                  <Pagination
+                     currentPage={currentPage}
+                     totalPages={totalPages}
+                     onPageChange={setCurrentPage}
+                     themeColor="bg-islamic-green-600"
+                  />
                </div>
             </div>
          </div>

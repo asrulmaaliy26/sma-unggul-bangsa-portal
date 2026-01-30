@@ -95,6 +95,11 @@ const CreateJournal: React.FC = () => {
         documentUrl: documentFile || undefined,
       });
 
+      // Clear cache
+      sessionStorage.removeItem('admin_journals_data');
+      sessionStorage.removeItem('admin_journals_cats');
+      sessionStorage.removeItem('admin_journals_timestamp');
+
       alert(response.message || 'Jurnal berhasil ditambahkan!');
       navigate('/admin/journals');
     } catch (error: any) {

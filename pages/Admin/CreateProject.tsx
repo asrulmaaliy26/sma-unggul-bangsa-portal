@@ -112,6 +112,11 @@ const CreateProject: React.FC = () => {
         document_titles: validDocs.length > 0 ? validDocs.map(d => d.title) : undefined,
       });
 
+      // Clear cache
+      sessionStorage.removeItem('admin_projects_data');
+      sessionStorage.removeItem('admin_projects_cats');
+      sessionStorage.removeItem('admin_projects_timestamp');
+
       alert(response.message || 'Proyek berhasil ditambahkan!');
       navigate('/admin/projects');
     } catch (error: any) {

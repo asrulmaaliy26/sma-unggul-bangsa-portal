@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Newspaper, Plus, Search, Edit3, Trash2, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Newspaper, Plus, Search, Edit3, Trash2, ArrowLeft, ExternalLink, RotateCcw } from 'lucide-react';
 import { fetchNews, fetchNewsCategories } from '../../services/api';
 import { NewsItem } from '../../types';
+import Pagination from '../../components/Pagination';
 
 const ManageNews: React.FC = () => {
    const [news, setNews] = useState<NewsItem[]>([]);
@@ -14,15 +14,43 @@ const ManageNews: React.FC = () => {
    const [activeCategory, setActiveCategory] = useState('Semua');
    const [searchTerm, setSearchTerm] = useState('');
 
+   const CACHE_KEY_NEWS = 'admin_news_data';
+   const CACHE_KEY_CATS = 'admin_news_cats';
+   const CACHE_TIMESTAMP = 'admin_news_timestamp';
+   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
    useEffect(() => {
       const loadData = async () => {
          try {
+            // Check cache
+            const cachedNews = sessionStorage.getItem(CACHE_KEY_NEWS);
+            const cachedCats = sessionStorage.getItem(CACHE_KEY_CATS);
+            const cachedTime = sessionStorage.getItem(CACHE_TIMESTAMP);
+
+            const isCacheValid = cachedTime && (Date.now() - parseInt(cachedTime) < CACHE_DURATION);
+
+            if (cachedNews && cachedCats && isCacheValid) {
+               setNews(JSON.parse(cachedNews));
+               setCategories(JSON.parse(cachedCats));
+               setLoading(false);
+               return;
+            }
+
+            // Fetch new data
             const [newsData, catsData] = await Promise.all([
                fetchNews(),
                fetchNewsCategories()
             ]);
+
+            const catsWithAll = ['Semua', ...catsData];
             setNews(newsData);
-            setCategories(['Semua', ...catsData]);
+            setCategories(catsWithAll);
+
+            // Save to cache
+            sessionStorage.setItem(CACHE_KEY_NEWS, JSON.stringify(newsData));
+            sessionStorage.setItem(CACHE_KEY_CATS, JSON.stringify(catsWithAll));
+            sessionStorage.setItem(CACHE_TIMESTAMP, Date.now().toString());
+
          } catch (error) {
             console.error('Error fetching data:', error);
          } finally {
@@ -31,6 +59,14 @@ const ManageNews: React.FC = () => {
       };
       loadData();
    }, []);
+
+   const handleRefresh = () => {
+      setLoading(true);
+      sessionStorage.removeItem(CACHE_KEY_NEWS);
+      sessionStorage.removeItem(CACHE_KEY_CATS);
+      sessionStorage.removeItem(CACHE_TIMESTAMP);
+      window.location.reload();
+   };
 
    const filteredNews = news.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -56,9 +92,18 @@ const ManageNews: React.FC = () => {
                   <p className="text-slate-500 font-medium">Manajemen konten artikel dan berita sekolah.</p>
                </div>
             </div>
-            <Link to="/admin/news/create" className="flex items-center gap-2 bg-islamic-green-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-islamic-green-700 transition-all shadow-xl shadow-islamic-green-200">
-               <Plus className="w-5 h-5" /> Tambah Berita
-            </Link>
+            <div className="flex items-center gap-3">
+               <button
+                  onClick={handleRefresh}
+                  className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-islamic-green-600 hover:rotate-180 transition-all duration-500 shadow-sm"
+                  title="Refresh Data"
+               >
+                  <RotateCcw className="w-5 h-5" />
+               </button>
+               <Link to="/admin/news/create" className="flex items-center gap-2 bg-islamic-green-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-islamic-green-700 transition-all shadow-xl shadow-islamic-green-200">
+                  <Plus className="w-5 h-5" /> Tambah Berita
+               </Link>
+            </div>
          </header>
 
          {/* Search & Filter Bar */}
@@ -146,24 +191,17 @@ const ManageNews: React.FC = () => {
                   </tbody>
                </table>
             </div>
-            <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex justify-between items-center">
-               <p className="text-xs font-bold text-slate-400">Menampilkan {Math.min(itemsPerPage * currentPage, news.length)} dari {news.length} warta sekolah</p>
-               <div className="flex gap-2">
-                  <button
-                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                     disabled={currentPage === 1}
-                     className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
-                  >
-                     Sebelumnya
-                  </button>
-                  <button className="px-4 py-2 bg-islamic-green-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-islamic-green-100">{currentPage}</button>
-                  <button
-                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                     disabled={currentPage === totalPages}
-                     className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
-                  >
-                     Selanjutnya
-                  </button>
+            <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+               <p className="text-xs font-bold text-slate-400">
+                  Menampilkan {Math.min(itemsPerPage * currentPage, filteredNews.length)} dari {filteredNews.length} warta sekolah
+               </p>
+               <div className="-mt-16 md:mt-0">
+                  <Pagination
+                     currentPage={currentPage}
+                     totalPages={totalPages}
+                     onPageChange={setCurrentPage}
+                     themeColor="bg-islamic-green-600"
+                  />
                </div>
             </div>
          </div>
