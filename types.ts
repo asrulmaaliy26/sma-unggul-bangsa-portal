@@ -43,6 +43,7 @@ export interface JournalItem {
   score: number;
   date: string;
   isBest?: boolean;
+  is_best?: boolean;
   jenjang: EducationLevel;
   fileUrl?: string;
 }

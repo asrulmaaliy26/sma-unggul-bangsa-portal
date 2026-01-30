@@ -1,13 +1,13 @@
-
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { MOCK_PROJECTS, SCHOOL_NAME } from '../constants'; // Fallback
-import { fetchProjectCategories, fetchProjects } from '../services/api';
-import { ArrowUpRight, Layers, Tag, LayoutGrid, ChevronRight } from 'lucide-react';
+import { fetchProjectCategories, fetchProjectsWithLimit } from '../services/api';
+import { Layers, Tag, LayoutGrid, ChevronRight, Loader2 } from 'lucide-react';
 import { LevelContext } from '../App';
 import { EducationLevel, ProjectItem } from '../types';
 import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
-import Pagination from '../components/Pagination';
+import ProjectCard from '../components/ProjectCard';
+import SkeletonProjectCard from '../components/SkeletonProjectCard';
 
 const Projects: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
@@ -18,47 +18,63 @@ const Projects: React.FC = () => {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
   const [projLoading, setProjLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [limit, setLimit] = useState(6);
+  const [hasMore, setHasMore] = useState(true);
   const theme = LEVEL_CONFIG[activeLevel];
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadCategories = async () => {
       try {
-        const [catsData, projectsData] = await Promise.all([
-          fetchProjectCategories(),
-          fetchProjects()
-        ]);
+        const catsData = await fetchProjectCategories();
         setCategories(catsData);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      } finally {
+        setCatLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      setProjLoading(true);
+      try {
+        const projectsData = await fetchProjectsWithLimit(limit);
         setProjects(projectsData);
+        if (projectsData.length < limit) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
       } catch (error) {
         console.error('Error loading project data:', error);
       } finally {
-        setCatLoading(false);
         setProjLoading(false);
       }
     };
-    loadData();
-  }, []);
+    loadProjects();
+  }, [limit]);
 
   const effectiveLevelFilter = activeLevel !== 'UMUM' ? activeLevel : subFilter;
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [subFilter, activeCategory, activeLevel]);
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesLevel = effectiveLevelFilter === 'SEMUA' || project.jenjang === effectiveLevelFilter;
+      const matchesCategory = activeCategory === 'Semua' || project.category === activeCategory;
+      return matchesLevel && matchesCategory;
+    });
+  }, [projects, effectiveLevelFilter, activeCategory]);
 
-  const filteredProjects = projects.filter(project => {
-    const matchesLevel = effectiveLevelFilter === 'SEMUA' || project.jenjang === effectiveLevelFilter;
-    const matchesCategory = activeCategory === 'Semua' || project.category === activeCategory;
-    return matchesLevel && matchesCategory;
-  });
+  const renderedProjects = useMemo(() => {
+    return filteredProjects.map(project => (
+      <ProjectCard key={project.id} project={project} levelConfig={LEVEL_CONFIG} />
+    ));
+  }, [filteredProjects, LEVEL_CONFIG]);
 
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const paginatedProjects = filteredProjects.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const loadMore = () => {
+    setLimit(prev => prev + 6);
+  };
 
   // Generate filter options dynamically from API config
   const filterOptions = React.useMemo(() => {
@@ -135,57 +151,32 @@ const Projects: React.FC = () => {
 
         {/* Grid Konten */}
         <div className="flex-1">
-          {projLoading ? (
-            <div className="text-center py-40">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-6"></div>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Memuat projek...</p>
+          {projLoading && limit === 6 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {Array(4).fill(0).map((_, i) => <SkeletonProjectCard key={i} />)}
             </div>
           ) : filteredProjects.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {paginatedProjects.map(project => {
-                  const projectTheme = LEVEL_CONFIG[project.jenjang];
-                  return (
-                    <Link to={`/projek/${project.id}`} key={project.id} className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col group">
-                      <div className="relative h-60 overflow-hidden">
-                        <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                        <div className="absolute top-6 left-6 flex gap-2">
-                          <div className={`${projectTheme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg`}>
-                            {project.jenjang}
-                          </div>
-                          <div className="bg-white/95 backdrop-blur-sm text-slate-900 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/50 shadow-sm">
-                            {project.category}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-10 flex flex-col flex-1">
-                        <div className="flex justify-between items-start mb-6">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{project.date}</span>
-                          <div className="bg-slate-50 p-3 rounded-2xl group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
-                            <ArrowUpRight className="w-5 h-5" />
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 mb-4 leading-tight group-hover:text-islamic-gold-600 transition-colors">{project.title}</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed mb-8 flex-1 line-clamp-2">
-                          {project.description}
-                        </p>
-                        <div className="pt-6 border-t border-slate-50 flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl ${projectTheme.bg} flex items-center justify-center text-[10px] font-black text-white shadow-lg`}>
-                            {project.author.substring(0, 2)}
-                          </div>
-                          <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">{project.author}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+                {renderedProjects}
               </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                themeColor={theme.bg}
-              />
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="text-center pt-8">
+                  <button
+                    onClick={loadMore}
+                    disabled={projLoading}
+                    className={`px-8 py-3 rounded-full font-bold text-white transition-all shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 ${theme.bg}`}
+                  >
+                    {projLoading ? (
+                      <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Memuat...</span>
+                    ) : (
+                      "Muat Lebih Banyak"
+                    )}
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center py-40 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">

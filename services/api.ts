@@ -133,6 +133,22 @@ export const fetchNews = async (): Promise<NewsItem[]> => {
     return json.data;
 };
 
+export const fetchLatestNews = async (): Promise<NewsItem[]> => {
+    const json = await fetchJson<{ data: NewsItem[] }>(
+        `${API_BASE_URL}/news/limit/3`,
+        'Gagal mengambil berita terkini'
+    );
+    return json.data;
+};
+
+export const fetchNewsWithLimit = async (limit: number): Promise<NewsItem[]> => {
+    const json = await fetchJson<{ data: NewsItem[] }>(
+        `${API_BASE_URL}/news/limit/${limit}`,
+        `Gagal mengambil ${limit} berita`
+    );
+    return json.data;
+};
+
 export const fetchProjects = async (): Promise<ProjectItem[]> => {
     const json = await fetchJson<{ data: ProjectItem[] }>(
         `${API_BASE_URL}/projects`,
@@ -141,10 +157,34 @@ export const fetchProjects = async (): Promise<ProjectItem[]> => {
     return json.data;
 };
 
+export const fetchProjectsWithLimit = async (limit: number): Promise<ProjectItem[]> => {
+    const json = await fetchJson<{ data: ProjectItem[] }>(
+        `${API_BASE_URL}/projects/limit/${limit}`,
+        `Gagal mengambil ${limit} proyek`
+    );
+    return json.data;
+};
+
 export const fetchJournals = async (): Promise<JournalItem[]> => {
     const json = await fetchJson<{ data: JournalItem[] }>(
         `${API_BASE_URL}/journals`,
         'Gagal mengambil data Jurnal'
+    );
+    return json.data;
+};
+
+export const fetchJournalsWithLimit = async (limit: number): Promise<JournalItem[]> => {
+    const json = await fetchJson<{ data: JournalItem[] }>(
+        `${API_BASE_URL}/journals/limit/${limit}`,
+        `Gagal mengambil ${limit} jurnal`
+    );
+    return json.data;
+};
+
+export const fetchBestJournals = async (): Promise<JournalItem[]> => {
+    const json = await fetchJson<{ data: JournalItem[] }>(
+        `${API_BASE_URL}/journals/best`,
+        'Gagal mengambil data Jurnal Terbaik'
     );
     return json.data;
 };
@@ -396,6 +436,173 @@ export const createJournal = async (payload: CreateJournalPayload): Promise<Crea
     if (!response.ok) {
         throw new Error(
             data?.message || `Gagal membuat jurnal: (${response.status})`
+        );
+    }
+
+    return data as CreateJournalResponse;
+};
+
+// ==================== UPDATE FUNCTIONS ====================
+
+export interface UpdateNewsPayload extends CreateNewsPayload {
+    id: number;
+}
+
+export const updateNews = async (payload: UpdateNewsPayload): Promise<CreateNewsResponse> => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append('title', payload.title);
+    formData.append('excerpt', payload.excerpt);
+    formData.append('content', payload.content);
+    formData.append('date', payload.date);
+    formData.append('category', payload.category);
+    formData.append('jenjang', payload.jenjang);
+
+    if (payload.level) {
+        formData.append('level', payload.level);
+    }
+
+    // Add main image if provided
+    if (payload.main_image) {
+        formData.append('main_image', payload.main_image);
+    }
+
+    // Add gallery images if provided
+    if (payload.gallery && payload.gallery.length > 0) {
+        payload.gallery.forEach((file) => {
+            formData.append('gallery[]', file);
+        });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/news/${payload.id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal mengupdate berita: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || `Gagal mengupdate berita: (${response.status})`
+        );
+    }
+
+    return data as CreateNewsResponse;
+};
+
+export interface UpdateProjectPayload extends CreateProjectPayload {
+    id: number;
+}
+
+export const updateProject = async (payload: UpdateProjectPayload): Promise<CreateProjectResponse> => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append('title', payload.title);
+    formData.append('category', payload.category);
+    formData.append('description', payload.description);
+    formData.append('author', payload.author);
+    formData.append('date', payload.date);
+    formData.append('jenjang', payload.jenjang);
+
+    // Add image if provided
+    if (payload.imageUrl) {
+        formData.append('imageUrl', payload.imageUrl);
+    }
+
+    // Add documents with metadata if provided
+    if (payload.documents && payload.documents.length > 0) {
+        payload.documents.forEach((file) => {
+            formData.append('documents[]', file);
+        });
+
+        if (payload.document_types && payload.document_types.length > 0) {
+            payload.document_types.forEach((type) => {
+                formData.append('document_types[]', type);
+            });
+        }
+
+        if (payload.document_titles && payload.document_titles.length > 0) {
+            payload.document_titles.forEach((title) => {
+                formData.append('document_titles[]', title);
+            });
+        }
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/projects/${payload.id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal mengupdate proyek: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || `Gagal mengupdate proyek: (${response.status})`
+        );
+    }
+
+    return data as CreateProjectResponse;
+};
+
+export interface UpdateJournalPayload extends CreateJournalPayload {
+    id: number;
+}
+
+export const updateJournal = async (payload: UpdateJournalPayload): Promise<CreateJournalResponse> => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append('title', payload.title);
+    formData.append('category', payload.category);
+    formData.append('abstract', payload.abstract);
+    formData.append('author', payload.author);
+    formData.append('mentor', payload.mentor);
+    formData.append('score', payload.score.toString());
+    formData.append('date', payload.date);
+    formData.append('jenjang', payload.jenjang);
+    formData.append('is_best', payload.is_best ? '1' : '0');
+
+    // Add PDF document if provided
+    if (payload.documentUrl) {
+        formData.append('documentUrl', payload.documentUrl);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/journals/${payload.id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal mengupdate jurnal: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || `Gagal mengupdate jurnal: (${response.status})`
         );
     }
 

@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap,
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
 import { Slide, Stat, NewsItem, JournalItem } from '../types';
-import { fetchHomeData, fetchNews, fetchJournals } from '../services/api';
+import { fetchHomeData, fetchLatestNews, fetchJournals, fetchBestJournals } from '../services/api';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Home: React.FC = () => {
@@ -16,20 +16,23 @@ const Home: React.FC = () => {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [journals, setJournals] = useState<JournalItem[]>([]);
+  const [bestJournals, setBestJournals] = useState<JournalItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const [homeData, newsData, journalsData] = await Promise.all([
+        const [homeData, newsData, journalsData, bestJournalsData] = await Promise.all([
           fetchHomeData(),
-          fetchNews(),
-          fetchJournals()
+          fetchLatestNews(),
+          fetchJournals(),
+          fetchBestJournals()
         ]);
         setAllStats(homeData.stats);
         setSlides(homeData.slides);
         setNews(newsData);
         setJournals(journalsData);
+        setBestJournals(bestJournalsData);
       } catch (error) {
         console.error('Error loading home data:', error);
       } finally {
@@ -53,7 +56,9 @@ const Home: React.FC = () => {
     return allStats[key] || [];
   }, [allStats, activeLevel]);
 
-  const topJournal = journalList.find(j => j.isBest) || journalList[0];
+  // Use best journals from API if available and match level
+  const filteredBestJournals = activeLevel === 'UMUM' ? bestJournals : bestJournals.filter(j => j.jenjang.toLowerCase() === activeLevel.toLowerCase());
+  const topJournal = filteredBestJournals.length > 0 ? filteredBestJournals[0] : (journalList.find(j => j.is_best || j.isBest) || journalList[0]);
 
   const getStatIcon = (label: string) => {
     if (label.includes('Murid')) return <Users className={`w-6 h-6 ${theme.text}`} />;
@@ -163,6 +168,7 @@ const Home: React.FC = () => {
       {/* Best Journal Section */}
       {topJournal && (
         <section className="max-w-7xl mx-auto px-4 md:px-8">
+          <h2 className="text-4xl font-black text-black leading-tight">Best Journal</h2>
           <div className="bg-slate-50 rounded-[3rem] p-16 border border-slate-100 flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
               <div className="bg-islamic-gold-500 text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase mb-8 w-fit shadow-xl shadow-islamic-gold-100">Jurnal Akademik Terbaik ({topJournal.jenjang})</div>

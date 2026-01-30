@@ -1,14 +1,14 @@
 
 
-import React, { useState, useContext, useEffect } from 'react';
-import { MOCK_NEWS } from '../constants'; // Fallback if API fails empty
-import { fetchNewsCategories, fetchNews } from '../services/api';
-import { Search, Eye, Calendar, TrendingUp, Filter, Check } from 'lucide-react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
+import { fetchNewsCategories, fetchNewsWithLimit } from '../services/api';
+import { Search, TrendingUp, Filter, Check, Loader2 } from 'lucide-react';
 import { LevelContext } from '../App';
 import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 import { NewsItem } from '../types';
-import Pagination from '../components/Pagination';
+import NewsCard from '../components/NewsCard';
+import SkeletonNewsCard from '../components/SkeletonNewsCard';
 
 const News: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,57 +17,83 @@ const News: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [catLoading, setCatLoading] = useState(true);
   const [newsLoading, setNewsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [limit, setLimit] = useState(6);
+  const [hasMore, setHasMore] = useState(true);
 
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
 
+  // Initial Data Load (Categories)
   useEffect(() => {
-    const loadData = async () => {
+    const loadCategories = async () => {
       try {
-        const [catsData, newsData] = await Promise.all([
-          fetchNewsCategories(),
-          fetchNews()
-        ]);
+        const catsData = await fetchNewsCategories();
         setCategories(catsData);
-        setNews(newsData);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading categories:', error);
       } finally {
         setCatLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // News Data Load (with limit)
+  useEffect(() => {
+    const loadNews = async () => {
+      setNewsLoading(true);
+      try {
+        const newsData = await fetchNewsWithLimit(limit);
+        setNews(newsData);
+        // If we received fewer items than requested limit, we've reached the end
+        if (newsData.length < limit) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+      } catch (error) {
+        console.error('Error loading news:', error);
+      } finally {
         setNewsLoading(false);
       }
     };
-    loadData();
-  }, []);
+    loadNews();
+  }, [limit]);
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, activeCategory, activeLevel]);
+  const filteredNews = useMemo(() => {
+    return news.filter(n => {
+      const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesLevel = activeLevel === 'UMUM' ? true : n.jenjang === activeLevel;
+      const matchesCategory = activeCategory === 'Semua' ? true : n.category === activeCategory;
 
-  const filteredNews = news.filter(n => {
-    const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = activeLevel === 'UMUM' ? true : n.jenjang === activeLevel;
-    const matchesCategory = activeCategory === 'Semua' ? true : n.category === activeCategory;
+      return matchesSearch && matchesLevel && matchesCategory;
+    });
+  }, [news, searchTerm, activeLevel, activeCategory]);
 
-    return matchesSearch && matchesLevel && matchesCategory;
-  });
+  const loadMore = () => {
+    setLimit(prev => prev + 6);
+  };
 
-  const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
-  const paginatedNews = filteredNews.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const trendingNews = [...news]
-    .filter(n => activeLevel === 'UMUM' ? true : n.jenjang === activeLevel)
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 4);
+  const trendingNews = useMemo(() => {
+    return [...news]
+      .filter(n => activeLevel === 'UMUM' ? true : n.jenjang === activeLevel)
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 4);
+  }, [news, activeLevel]);
 
   const theme = LEVEL_CONFIG[activeLevel];
+
+  const renderedNews = useMemo(() => {
+    return filteredNews.map(news => (
+      <NewsCard
+        key={news.id}
+        news={news}
+        levelConfig={LEVEL_CONFIG}
+        theme={theme}
+      />
+    ));
+  }, [filteredNews, LEVEL_CONFIG, theme]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-20">
@@ -124,58 +150,32 @@ const News: React.FC = () => {
           </header>
 
           <div className="space-y-10">
-            {newsLoading ? (
-              <div className="text-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
-                <p className="text-slate-400 font-bold">Memuat berita...</p>
+            {newsLoading && limit === 6 ? (
+              <div className="space-y-10">
+                {Array(3).fill(0).map((_, i) => <SkeletonNewsCard key={i} />)}
               </div>
             ) : filteredNews.length > 0 ? (
               <>
-                {paginatedNews.map(news => {
-                  // const newsTheme = LEVEL_CONFIG[news.jenjang];
-                  const newsTheme =
-                    news.jenjang === 'SMA'
-                      ? LEVEL_CONFIG['MA']
-                      : LEVEL_CONFIG[news.jenjang];
-                  return (
-                    <article key={news.id} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-slate-100 flex flex-col sm:flex-row group">
-                      <div className="sm:w-2/5 h-64 sm:h-auto overflow-hidden relative">
-                        <img src={news.main_image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                        <div className={`absolute top-6 left-6 ${newsTheme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl`}>
-                          {news.jenjang}
-                        </div>
-                      </div>
-                      <div className="sm:w-3/5 p-10 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center gap-4 mb-6">
-                            <span className="bg-slate-50 text-slate-400 border border-slate-100 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">{news.category}</span>
-                            <span className="text-slate-400 text-[10px] font-bold flex items-center uppercase tracking-widest gap-2">
-                              <Calendar className="w-4 h-4 text-islamic-gold-500" /> {news.date}
-                            </span>
-                          </div>
-                          <Link to={`/berita/${news.id}`}>
-                            <h2 className="text-2xl font-black text-slate-900 mb-4 leading-tight group-hover:text-islamic-green-700 transition-colors">{news.title}</h2>
-                          </Link>
-                          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed mb-8">{news.excerpt}</p>
-                        </div>
-                        <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-                          <div className="flex items-center text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                            <Eye className="w-4 h-4 mr-2 text-islamic-green-600" /> {news.views.toLocaleString()} Pembaca
-                          </div>
-                          <Link to={`/berita/${news.id}`} className="text-islamic-green-600 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
-                            Baca Berita <TrendingUp className="w-4 h-4" />
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  themeColor={theme.bg}
-                />
+                <div className="space-y-10">
+                  {renderedNews}
+                </div>
+
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="text-center pt-8">
+                    <button
+                      onClick={loadMore}
+                      disabled={newsLoading}
+                      className={`px-8 py-3 rounded-full font-bold text-white transition-all shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 ${theme.bg}`}
+                    >
+                      {newsLoading ? (
+                        <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Memuat...</span>
+                      ) : (
+                        "Muat Lebih Banyak"
+                      )}
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-center py-32 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
@@ -209,7 +209,7 @@ const News: React.FC = () => {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-islamic-green-600 transition-colors line-clamp-2">{news.title}</h4>
                       <div className="flex items-center gap-3 mt-3">
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${LEVEL_CONFIG[news.jenjang].bg} text-white uppercase tracking-widest`}>{news.jenjang}</span>
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${theme.bg} text-white uppercase tracking-widest`}>{news.jenjang}</span>
                         <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{news.views} views</span>
                       </div>
                     </div>
