@@ -28,6 +28,9 @@ const EditProject: React.FC = () => {
    const [author, setAuthor] = useState('');
    const [category, setCategory] = useState('');
    const [description, setDescription] = useState('');
+   const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
+   const isLocked = DEFAULT_JENJANG !== 'UMUM';
+
    const [jenjang, setJenjang] = useState<EducationLevel>('SMA');
 
    // Images
@@ -217,9 +220,10 @@ const EditProject: React.FC = () => {
                      <Layers className="w-4 h-4" /> Jenjang
                   </label>
                   <select
-                     className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                     className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
                      value={jenjang}
                      onChange={(e) => setJenjang(e.target.value as EducationLevel)}
+                     disabled={isLocked}
                   >
                      {Object.keys(LEVEL_CONFIG)
                         .filter(key => key !== 'UMUM')

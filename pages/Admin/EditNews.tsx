@@ -25,6 +25,9 @@ const EditNews: React.FC = () => {
   const [excerpt, setExcerpt] = useState('');
   const [category, setCategory] = useState<'Prestasi' | 'Kegiatan' | 'Akademik' | 'Pengumuman' | 'Wisuda' | 'Seminar' | 'Lainnya'>('Prestasi');
   const [level, setLevel] = useState<'Nasional' | 'Internasional' | 'Provinsi'>('Nasional');
+  const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
+  const isLocked = DEFAULT_JENJANG !== 'UMUM';
+
   const [jenjang, setJenjang] = useState<EducationLevel>('SMA');
   const [content, setContent] = useState('');
 
@@ -235,9 +238,10 @@ const EditNews: React.FC = () => {
                 <div>
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">Jenjang Pendidikan</label>
                   <select
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
+                    className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
                     value={jenjang}
                     onChange={(e) => setJenjang(e.target.value as any)}
+                    disabled={isLocked}
                   >
                     {Object.keys(LEVEL_CONFIG)
                       .filter(key => key !== 'UMUM')

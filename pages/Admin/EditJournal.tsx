@@ -24,6 +24,8 @@ const EditJournal: React.FC = () => {
   const [score, setScore] = useState(0);
   const [abstract, setAbstract] = useState('');
   const [isBest, setIsBest] = useState(false);
+  const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
+  const isLocked = DEFAULT_JENJANG !== 'UMUM';
   const [jenjang, setJenjang] = useState<EducationLevel>('SMA');
 
   // File
@@ -186,9 +188,10 @@ const EditJournal: React.FC = () => {
                   <Layers className="w-4 h-4" /> Jenjang Pendidikan
                 </label>
                 <select
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 appearance-none outline-none focus:ring-2 focus:ring-islamic-green-500"
+                  className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 appearance-none outline-none focus:ring-2 focus:ring-islamic-green-500 ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
                   value={jenjang}
                   onChange={(e) => setJenjang(e.target.value as EducationLevel)}
+                  disabled={isLocked}
                 >
                   {Object.keys(LEVEL_CONFIG)
                     .filter(key => key !== 'UMUM')

@@ -21,7 +21,9 @@ const CreateJournal: React.FC = () => {
   const [abstract, setAbstract] = useState('');
   const [isBest, setIsBest] = useState(false);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [jenjang, setJenjang] = useState<EducationLevel>(activeLevel === 'UMUM' ? 'SMA' : activeLevel);
+  const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
+  const isLocked = DEFAULT_JENJANG !== 'UMUM';
+  const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'SMA' : activeLevel));
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -176,9 +178,10 @@ const CreateJournal: React.FC = () => {
                 <Layers className="w-4 h-4" /> Jenjang
               </label>
               <select
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
                 value={jenjang}
                 onChange={(e) => setJenjang(e.target.value as EducationLevel)}
+                disabled={isLocked}
               >
                 {Object.keys(LEVEL_CONFIG)
                   .filter(key => key !== 'UMUM')
