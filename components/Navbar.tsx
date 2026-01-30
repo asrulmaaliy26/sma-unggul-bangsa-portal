@@ -128,9 +128,18 @@ const Navbar: React.FC = () => {
               <UserCog className="w-5 h-5" />
             </Link>
 
+            <a
+              href="https://ppdb.almannan.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${currentTheme.bg} ml-4 text-white px-6 py-3 rounded-full font-bold text-sm hover:brightness-110 transition-all shadow-lg`}
+            >
+              PPDB
+            </a>
+            {/* Mobile menu button 
             <Link to="/contact" className={`${currentTheme.bg} ml-2 text-white px-6 py-3 rounded-full font-bold text-sm hover:brightness-110 transition-all shadow-lg`}>
               Hubungi
-            </Link>
+            </Link>*/}
           </div>
 
           {/* Mobile menu button */}
@@ -170,6 +179,15 @@ const Navbar: React.FC = () => {
               {link.name}
             </Link>
           ))}
+          <a
+            href="https://ppdb.almannan.id/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`block px-4 py-3 text-center text-sm font-black rounded-xl ${currentTheme.bg} text-white shadow-lg`}
+            onClick={() => setIsOpen(false)}
+          >
+            PPDB Online
+          </a>
         </div>
       )}
     </nav>
