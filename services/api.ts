@@ -29,6 +29,53 @@ const fetchJson = async <T>(url: string, errorMessage: string): Promise<T> => {
     return data as T;
 };
 
+/**
+ * Mendapatkan default jenjang berdasarkan Environment Variable atau Subdomain
+ */
+export const getDefaultLevel = (): string => {
+    // 1. Cek Environment Variable (VITE_DEFAULT_JENJANG)
+    const envLevel = (import.meta as any).env.VITE_DEFAULT_JENJANG;
+    if (envLevel) {
+        return envLevel.toUpperCase();
+    }
+
+    // 2. Cek Subdomain
+    try {
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+
+        // Menangani case: sub.domain.com atau sub.localhost
+        // Jika parts > 2 (misal sma.sekolah.com) maka ambil sma
+        // Jika localhost (misal sma.localhost) maka ambil sma
+        if (parts.length > 0) {
+            const subdomain = parts[0].toUpperCase();
+
+            // Check if subdomain matches valid levels directly
+            const validLevels = ['TK', 'SD', 'SMP', 'SMA', 'STAI'];
+            if (validLevels.includes(subdomain)) {
+                return subdomain;
+            }
+
+            // Mapping alternatif
+            const altMapping: Record<string, string> = {
+                'MA': 'SMA',
+                'MI': 'SD',
+                'MTS': 'SMP',
+                'KAMPUS': 'STAI',
+                'UNIV': 'STAI'
+            };
+
+            if (altMapping[subdomain]) {
+                return altMapping[subdomain];
+            }
+        }
+    } catch (e) {
+        console.error("Error parsing hostname for level detection", e);
+    }
+
+    return 'UMUM';
+};
+
 /* ================= HOME ================= */
 
 export const fetchHomeData = async (): Promise<HomeData> => {
@@ -145,6 +192,14 @@ export const fetchNewsWithLimit = async (limit: number): Promise<NewsItem[]> => 
     const json = await fetchJson<{ data: NewsItem[] }>(
         `${API_BASE_URL}/news/limit/${limit}`,
         `Gagal mengambil ${limit} berita`
+    );
+    return json.data;
+};
+
+export const fetchNewsWithLimitAndLevel = async (limit: number, level: string): Promise<NewsItem[]> => {
+    const json = await fetchJson<{ data: NewsItem[] }>(
+        `${API_BASE_URL}/news/limit/${limit}/${level}`,
+        `Gagal mengambil ${limit} berita untuk jenjang ${level}`
     );
     return json.data;
 };

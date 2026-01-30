@@ -28,7 +28,7 @@ import AdminLayout from './components/AdminLayout';
 import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
 import { getSchoolAssistantResponse } from './services/gemini';
 import { EducationLevel, LevelConfigData } from './types';
-import { fetchLevelConfig } from './services/api';
+import { fetchLevelConfig, getDefaultLevel } from './services/api';
 
 // Context untuk Level Pendidikan
 export const LevelContext = createContext<{
@@ -41,7 +41,7 @@ export const LevelConfigContext = createContext<LevelConfigData | null>(null);
 
 const App: React.FC = () => {
   const location = useLocation();
-  const [activeLevel, setActiveLevel] = useState<EducationLevel>('UMUM');
+  const [activeLevel, setActiveLevel] = useState<EducationLevel>(getDefaultLevel() as EducationLevel);
   const [levelConfig, setLevelConfig] = useState<LevelConfigData | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');

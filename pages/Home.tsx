@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap,
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
 import { Slide, Stat, NewsItem, JournalItem } from '../types';
-import { fetchHomeData, fetchLatestNews, fetchJournals, fetchBestJournals } from '../services/api';
+import { fetchHomeData, fetchLatestNews, fetchJournals, fetchBestJournals, fetchNewsWithLimitAndLevel } from '../services/api';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const Home: React.FC = () => {
@@ -20,17 +20,15 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadHomeData = async () => {
+    const loadGlobalData = async () => {
       try {
-        const [homeData, newsData, journalsData, bestJournalsData] = await Promise.all([
+        const [homeData, journalsData, bestJournalsData] = await Promise.all([
           fetchHomeData(),
-          fetchLatestNews(),
           fetchJournals(),
           fetchBestJournals()
         ]);
         setAllStats(homeData.stats);
         setSlides(homeData.slides);
-        setNews(newsData);
         setJournals(journalsData);
         setBestJournals(bestJournalsData);
       } catch (error) {
@@ -39,11 +37,36 @@ const Home: React.FC = () => {
         setLoading(false);
       }
     };
-    loadHomeData();
+    loadGlobalData();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    const loadNewsData = async () => {
+      try {
+        let newsData: NewsItem[];
+        if (activeLevel === 'UMUM') {
+          newsData = await fetchLatestNews();
+        } else {
+          newsData = await fetchNewsWithLimitAndLevel(3, activeLevel);
+        }
+        if (isMounted) {
+          setNews(newsData);
+        }
+      } catch (error) {
+        console.error('Error loading news data:', error);
+      }
+    };
+    loadNewsData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeLevel]);
+
   // Filtering data berdasarkan level
-  const newsList = activeLevel === 'UMUM' ? news : news.filter(n => n.jenjang === activeLevel);
+  // News fetching is now handled per level, so we rely on API response directly.
+  const newsList = news;
   // const projectList = activeLevel === 'UMUM' ? MOCK_PROJECTS : MOCK_PROJECTS.filter(p => p.jenjang === activeLevel);
   const journalList = activeLevel === 'UMUM' ? journals : journals.filter(j => j.jenjang === activeLevel);
 
