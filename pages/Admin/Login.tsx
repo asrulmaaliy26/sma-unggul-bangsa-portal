@@ -20,7 +20,7 @@ const AdminLogin: React.FC = () => {
         const validSecret = secretCode || 'admin123';
 
         if (code === validSecret) {
-            localStorage.setItem('admin_auth_token', 'authenticated');
+            sessionStorage.setItem('admin_auth_token', 'authenticated');
             navigate('/admin');
         } else {
             setError('Kode akses salah. Silakan coba lagi.');

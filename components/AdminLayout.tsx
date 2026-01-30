@@ -8,7 +8,7 @@ const AdminLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     // Check authentication
-    const authToken = localStorage.getItem('admin_auth_token');
+    const authToken = sessionStorage.getItem('admin_auth_token');
 
     // If not authenticated and not currently on the login page (though layout typically wraps protected routes)
     // IMPORTANT: The login route itself should NOT be wrapped in AdminLayout if AdminLayout enforces auth, 

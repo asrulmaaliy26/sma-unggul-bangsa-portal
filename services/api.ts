@@ -1,6 +1,7 @@
 import { HomeData, CategoryData, LevelConfigData, AboutData, NewsItem, ProjectItem, JournalItem, Facility } from '../types';
 
-const API_BASE_URL = 'https://admin.staialmannan.ac.id';
+// const API_BASE_URL = 'https://admin.staialmannan.ac.id';
+const API_BASE_URL = 'http://localhost:8000';
 
 /**
  * Helper fetch dengan error detail
