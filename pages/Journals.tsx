@@ -1,6 +1,5 @@
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { MOCK_JOURNALS } from '../constants'; // Fallback
 import { fetchJournalCategories, fetchJournalsWithLimit } from '../services/api';
 import { FileText, Layers, BookOpen, Tag, ChevronRight, Loader2 } from 'lucide-react';
 import { LevelContext } from '../App';
@@ -9,24 +8,32 @@ import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 import JournalCard from '../components/JournalCard';
 import SkeletonJournalCard from '../components/SkeletonJournalCard';
+import { useCache } from '../context/CacheContext';
 
 const Journals: React.FC = () => {
+  const { homeCache, setHomeCache } = useCache();
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
-  const [categories, setCategories] = useState<string[]>(['Semua']);
-  const [journals, setJournals] = useState<JournalItem[]>([]);
-  const [catLoading, setCatLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [limit, setLimit] = useState(6);
+
+  const [categories, setCategories] = useState<string[]>(homeCache.journalCategories && homeCache.journalCategories.length > 0 ? homeCache.journalCategories : ['Semua']);
+  const [journals, setJournals] = useState<JournalItem[]>(homeCache.allJournals || []);
+
+  const [catLoading, setCatLoading] = useState(homeCache.journalCategories && homeCache.journalCategories.length > 0 ? false : true);
+  const [loading, setLoading] = useState(!homeCache.isJournalsLoaded);
+
+  const [limit, setLimit] = useState(homeCache.allJournals?.length || 6);
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
+    if (homeCache.journalCategories && homeCache.journalCategories.length > 0) return;
+
     const loadCategories = async () => {
       try {
         const catsData = await fetchJournalCategories();
         setCategories(catsData);
+        setHomeCache({ journalCategories: catsData });
       } catch (error) {
         console.error('Error loading categories:', error);
       } finally {
@@ -37,11 +44,18 @@ const Journals: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (homeCache.isJournalsLoaded && journals.length >= limit) {
+      setLoading(false);
+      return;
+    }
+
     const loadJournals = async () => {
       setLoading(true);
       try {
         const journalsData = await fetchJournalsWithLimit(limit);
         setJournals(journalsData);
+        setHomeCache({ allJournals: journalsData, isJournalsLoaded: true });
+
         if (journalsData.length < limit) {
           setHasMore(false);
         } else {

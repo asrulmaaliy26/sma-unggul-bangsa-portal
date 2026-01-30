@@ -1,10 +1,12 @@
-import { HomeData, CategoryData, LevelConfigData, AboutData, NewsItem, ProjectItem, JournalItem, Facility } from '../types';
+import { HomeData, CategoryData, LevelConfigData, NewsItem, ProjectItem, JournalItem, Facility } from '../types';
 
-// const API_BASE_URL = 'https://admin.staialmannan.ac.id';
-const API_BASE_URL = 'http://localhost:8000';
+// Configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+/* ================= HELPERS ================= */
 
 /**
- * Helper fetch dengan error detail
+ * Generic fetch wrapper with error handling and JSON parsing
  */
 const fetchJson = async <T>(url: string, errorMessage: string): Promise<T> => {
     const response = await fetch(url);
@@ -17,10 +19,7 @@ const fetchJson = async <T>(url: string, errorMessage: string): Promise<T> => {
     }
 
     if (!response.ok) {
-        throw new Error(
-            data?.message ||
-            `${errorMessage}: (${response.status})`
-        );
+        throw new Error(data?.message || `${errorMessage}: (${response.status})`);
     }
 
     if (!data) {
@@ -35,7 +34,7 @@ const fetchJson = async <T>(url: string, errorMessage: string): Promise<T> => {
  */
 export const getDefaultLevel = (): string => {
     // 1. Cek Environment Variable (VITE_DEFAULT_JENJANG)
-    const envLevel = (import.meta as any).env.VITE_DEFAULT_JENJANG;
+    const envLevel = import.meta.env.VITE_DEFAULT_JENJANG;
     if (envLevel) {
         return envLevel.toUpperCase();
     }
@@ -45,25 +44,21 @@ export const getDefaultLevel = (): string => {
         const hostname = window.location.hostname;
         const parts = hostname.split('.');
 
-        // Menangani case: sub.domain.com atau sub.localhost
-        // Jika parts > 2 (misal sma.sekolah.com) maka ambil sma
-        // Jika localhost (misal sma.localhost) maka ambil sma
         if (parts.length > 0) {
             const subdomain = parts[0].toUpperCase();
 
             // Check if subdomain matches valid levels directly
-            const validLevels = ['TK', 'SD', 'SMP', 'SMA', 'STAI'];
+            const validLevels = ['TK', 'MI', 'SMPT', 'MA', 'KAMPUS'];
             if (validLevels.includes(subdomain)) {
                 return subdomain;
             }
 
             // Mapping alternatif
             const altMapping: Record<string, string> = {
-                'MA': 'SMA',
-                'MI': 'SD',
-                'MTS': 'SMP',
-                'KAMPUS': 'STAI',
-                'UNIV': 'STAI'
+                'MA': 'MA',
+                'MI': 'MI',
+                'SMPT': 'SMPT',
+                'KAMPUS': 'KAMPUS',
             };
 
             if (altMapping[subdomain]) {
@@ -77,240 +72,121 @@ export const getDefaultLevel = (): string => {
     return 'UMUM';
 };
 
-/* ================= HOME ================= */
+/* ================= GLOBAL & CONFIG ================= */
 
-export const fetchHomeData = async (): Promise<HomeData> => {
-    let apiData: HomeData;
-    try {
-        apiData = await fetchJson<HomeData>(
-            `${API_BASE_URL}/home`,
-            'Gagal mengambil data Home'
-        );
-    } catch (e) {
-        console.warn("API Home fetch failed, using minimal fallback for stats.");
-        apiData = { stats: {}, slides: [] };
-    }
 
-    // Override Slides from ENV
-    const envSlides = (import.meta as any).env.VITE_HOME_SLIDES;
-    if (envSlides) {
-        try {
-            const parsedSlides = JSON.parse(envSlides);
-            if (Array.isArray(parsedSlides) && parsedSlides.length > 0) {
-                apiData.slides = parsedSlides;
-            }
-        } catch (e) {
-            console.error("Gagal parsing VITE_HOME_SLIDES", e);
-        }
-    }
 
-    // Inject Profile from ENV
-    const envProfileTitle = (import.meta as any).env.VITE_PROFILE_TITLE;
-    const envProfileDesc = (import.meta as any).env.VITE_PROFILE_DESC;
-    const envProfileImage = (import.meta as any).env.VITE_PROFILE_IMAGE;
-
-    if (envProfileTitle || envProfileDesc) {
-        apiData.profile = {
-            title: envProfileTitle || '',
-            description: envProfileDesc || '',
-            imageUrl: envProfileImage || 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9'
-        };
-    }
-
-    return apiData;
+export const fetchLevelConfig = async (): Promise<LevelConfigData> => {
+    const data = await fetchJson<LevelConfigData>(`${API_BASE_URL}/jenjang`, 'Gagal mengambil konfigurasi jenjang');
+    if (Object.keys(data).length === 0) throw new Error('Konfigurasi jenjang kosong');
+    return data;
 };
 
-/* ================= CATEGORIES ================= */
+// --- Categories ---
 
 export const fetchCategories = async (): Promise<CategoryData> => {
-    const data = await fetchJson<CategoryData>(
-        `${API_BASE_URL}/categories`,
-        'Gagal mengambil data kategori'
-    );
-
-    if (
-        !data.project_categories ||
-        !data.journal_categories ||
-        !data.news_categories
-    ) {
+    const data = await fetchJson<CategoryData>(`${API_BASE_URL}/categories`, 'Gagal mengambil data kategori');
+    if (!data.project_categories || !data.journal_categories || !data.news_categories) {
         throw new Error('Data kategori tidak lengkap');
     }
-
     return data;
 };
 
 export const fetchProjectCategories = async (): Promise<string[]> => {
     const data = await fetchCategories();
-
-    if (data.project_categories.length === 0) {
-        throw new Error('Kategori project tidak tersedia');
-    }
-
     return data.project_categories;
 };
 
 export const fetchJournalCategories = async (): Promise<string[]> => {
     const data = await fetchCategories();
-
-    if (data.journal_categories.length === 0) {
-        throw new Error('Kategori jurnal tidak tersedia');
-    }
-
     return data.journal_categories;
 };
 
 export const fetchNewsCategories = async (): Promise<string[]> => {
     const data = await fetchCategories();
-
-    if (data.news_categories.length === 0) {
-        throw new Error('Kategori berita tidak tersedia');
-    }
-
     return data.news_categories;
 };
 
-/* ================= JENJANG ================= */
+// --- Contact & Complaints ---
 
-export const fetchLevelConfig = async (): Promise<LevelConfigData> => {
-    const data = await fetchJson<LevelConfigData>(
-        `${API_BASE_URL}/jenjang`,
-        'Gagal mengambil konfigurasi jenjang'
-    );
+export interface ContactUsPayload {
+    name: string;
+    contact_info: string;
+    message: string;
+    jenjang: string;
+}
 
-    if (Object.keys(data).length === 0) {
-        throw new Error('Konfigurasi jenjang kosong');
-    }
-
-    return data;
+export const submitContactUs = async (payload: ContactUsPayload): Promise<{ message: string }> => {
+    const response = await fetch(`${API_BASE_URL}/api/contact-us`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    return handleSimpleResponse(response, 'Gagal mengirim pesan');
 };
 
-/* ================= CONTENT (News, Projects, Journals, Facilities) ================= */
+export interface ComplaintPayload {
+    name: string;
+    contact_info: string;
+    category: string;
+    message: string;
+    jenjang: string;
+}
 
-// LISTS
+export const submitComplaint = async (payload: ComplaintPayload): Promise<{ message: string }> => {
+    const response = await fetch(`${API_BASE_URL}/api/complaints`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    return handleSimpleResponse(response, 'Gagal mengirim pengaduan');
+};
+
+// Helper for simple responses
+async function handleSimpleResponse(response: Response, errorPrefix: string) {
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error(`${errorPrefix}: Response bukan JSON`);
+    }
+    if (!response.ok) {
+        throw new Error(data?.message || `${errorPrefix}: (${response.status})`);
+    }
+    return data;
+}
+
+
+/* ================= NEWS ================= */
 
 export const fetchNews = async (): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(
-        `${API_BASE_URL}/news`,
-        'Gagal mengambil data Berita'
-    );
+    const json = await fetchJson<{ data: NewsItem[] }>(`${API_BASE_URL}/news`, 'Gagal mengambil data Berita');
     return json.data;
 };
 
 export const fetchLatestNews = async (): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(
-        `${API_BASE_URL}/news/limit/3`,
-        'Gagal mengambil berita terkini'
-    );
-    return json.data;
+    return fetchNewsWithLimit(3);
 };
 
 export const fetchNewsWithLimit = async (limit: number): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(
-        `${API_BASE_URL}/news/limit/${limit}`,
-        `Gagal mengambil ${limit} berita`
-    );
+    const json = await fetchJson<{ data: NewsItem[] }>(`${API_BASE_URL}/news/limit/${limit}`, `Gagal mengambil ${limit} berita`);
     return json.data;
 };
 
 export const fetchNewsWithLimitAndLevel = async (limit: number, level: string): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(
-        `${API_BASE_URL}/news/limit/${limit}/${level}`,
-        `Gagal mengambil ${limit} berita untuk jenjang ${level}`
-    );
+    const json = await fetchJson<{ data: NewsItem[] }>(`${API_BASE_URL}/news/limit/${limit}/${level}`, `Gagal mengambil ${limit} berita untuk jenjang ${level}`);
     return json.data;
 };
 
 export const fetchNewsByCategory = async (category: string): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(
-        `${API_BASE_URL}/news/category/${category}`,
-        `Gagal mengambil berita kategori ${category}`
-    );
+    const json = await fetchJson<{ data: NewsItem[] }>(`${API_BASE_URL}/news/category/${category}`, `Gagal mengambil berita kategori ${category}`);
     return json.data;
 };
-
-export const fetchProjects = async (): Promise<ProjectItem[]> => {
-    const json = await fetchJson<{ data: ProjectItem[] }>(
-        `${API_BASE_URL}/projects`,
-        'Gagal mengambil data Project'
-    );
-    return json.data;
-};
-
-export const fetchProjectsWithLimit = async (limit: number): Promise<ProjectItem[]> => {
-    const json = await fetchJson<{ data: ProjectItem[] }>(
-        `${API_BASE_URL}/projects/limit/${limit}`,
-        `Gagal mengambil ${limit} proyek`
-    );
-    return json.data;
-};
-
-export const fetchJournals = async (): Promise<JournalItem[]> => {
-    const json = await fetchJson<{ data: JournalItem[] }>(
-        `${API_BASE_URL}/journals`,
-        'Gagal mengambil data Jurnal'
-    );
-    return json.data;
-};
-
-export const fetchJournalsWithLimit = async (limit: number): Promise<JournalItem[]> => {
-    const json = await fetchJson<{ data: JournalItem[] }>(
-        `${API_BASE_URL}/journals/limit/${limit}`,
-        `Gagal mengambil ${limit} jurnal`
-    );
-    return json.data;
-};
-
-export const fetchBestJournals = async (): Promise<JournalItem[]> => {
-    const json = await fetchJson<{ data: JournalItem[] }>(
-        `${API_BASE_URL}/journals/best`,
-        'Gagal mengambil data Jurnal Terbaik'
-    );
-    return json.data;
-};
-
-export const fetchFacilities = async (): Promise<Facility[]> => {
-    const json = await fetchJson<{ data: Facility[] }>(
-        `${API_BASE_URL}/facilities`,
-        'Gagal mengambil data Fasilitas'
-    );
-    return json.data;
-};
-
-// DETAILS
 
 export const fetchNewsDetail = async (id: string): Promise<NewsItem> => {
-    const json = await fetchJson<{ data: NewsItem }>(
-        `${API_BASE_URL}/news/${id}`,
-        `Gagal mengambil detail Berita ${id}`
-    );
+    const json = await fetchJson<{ data: NewsItem }>(`${API_BASE_URL}/news/${id}`, `Gagal mengambil detail Berita ${id}`);
     return json.data;
 };
-
-export const fetchProjectDetail = async (id: string): Promise<ProjectItem> => {
-    const json = await fetchJson<{ data: ProjectItem }>(
-        `${API_BASE_URL}/projects/${id}`,
-        `Gagal mengambil detail Project ${id}`
-    );
-    return json.data;
-};
-
-export const fetchJournalDetail = async (id: string): Promise<JournalItem> => {
-    const json = await fetchJson<{ data: JournalItem }>(
-        `${API_BASE_URL}/journals/${id}`,
-        `Gagal mengambil detail Jurnal ${id}`
-    );
-    return json.data;
-};
-
-export const fetchFacilityDetail = async (id: string): Promise<Facility> => {
-    const json = await fetchJson<{ data: Facility }>(
-        `${API_BASE_URL}/facilities/${id}`,
-        `Gagal mengambil detail Fasilitas ${id}`
-    );
-    return json.data;
-};
-
-/* ================= CREATE/UPDATE/DELETE ================= */
 
 export interface CreateNewsPayload {
     title: string;
@@ -331,54 +207,88 @@ export interface CreateNewsResponse {
 
 export const createNews = async (payload: CreateNewsPayload): Promise<CreateNewsResponse> => {
     const formData = new FormData();
-
-    // Add text fields
     formData.append('title', payload.title);
     formData.append('excerpt', payload.excerpt);
     formData.append('content', payload.content);
     formData.append('date', payload.date);
     formData.append('category', payload.category);
     formData.append('jenjang', payload.jenjang);
-
-    if (payload.level) {
-        formData.append('level', payload.level);
-    }
-
-    // Add main image
-    if (payload.main_image) {
-        formData.append('main_image', payload.main_image);
-    }
-
-    // Add gallery images
-    if (payload.gallery && payload.gallery.length > 0) {
-        payload.gallery.forEach((file) => {
-            formData.append('gallery[]', file);
-        });
+    if (payload.level) formData.append('level', payload.level);
+    if (payload.main_image) formData.append('main_image', payload.main_image);
+    if (payload.gallery?.length) {
+        payload.gallery.forEach(file => formData.append('gallery[]', file));
     }
 
     const response = await fetch(`${API_BASE_URL}/api/news`, {
         method: 'POST',
         body: formData,
-        headers: {
-            'Accept': 'application/json'
-        }
-        // Don't set Content-Type header - browser will set it automatically with boundary
+        headers: { 'Accept': 'application/json' }
     });
 
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal membuat berita: Response bukan JSON');
-    }
+    return handleSimpleResponse(response, 'Gagal membuat berita');
+};
 
-    if (!response.ok) {
-        throw new Error(
-            data?.message || `Gagal membuat berita: (${response.status})`
-        );
-    }
+export interface UpdateNewsPayload extends CreateNewsPayload {
+    id: number;
+}
 
-    return data as CreateNewsResponse;
+export const updateNews = async (payload: UpdateNewsPayload): Promise<CreateNewsResponse> => {
+    const formData = new FormData();
+    formData.append('title', payload.title);
+    formData.append('excerpt', payload.excerpt);
+    formData.append('content', payload.content);
+    formData.append('date', payload.date);
+    formData.append('category', payload.category);
+    formData.append('jenjang', payload.jenjang);
+    if (payload.level) formData.append('level', payload.level);
+    if (payload.main_image) formData.append('main_image', payload.main_image);
+    if (payload.gallery?.length) {
+        payload.gallery.forEach(file => formData.append('gallery[]', file));
+    }
+    formData.append('_method', 'PUT');
+
+    const response = await fetch(`${API_BASE_URL}/api/news/${payload.id}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+    });
+
+    return handleSimpleResponse(response, 'Gagal mengupdate berita');
+};
+
+export const deleteNews = async (id: string | number): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/news/${id}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' }
+    });
+    return handleSimpleResponse(response, 'Gagal menghapus berita');
+};
+
+export const deleteNewsGalleryImage = async (newsId: string | number, imageUrl: string): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/news/${newsId}/gallery`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ image_url: imageUrl })
+    });
+    return handleSimpleResponse(response, 'Gagal menghapus gambar galeri');
+};
+
+
+/* ================= PROJECTS ================= */
+
+export const fetchProjects = async (): Promise<ProjectItem[]> => {
+    const json = await fetchJson<{ data: ProjectItem[] }>(`${API_BASE_URL}/projects`, 'Gagal mengambil data Project');
+    return json.data;
+};
+
+export const fetchProjectsWithLimit = async (limit: number): Promise<ProjectItem[]> => {
+    const json = await fetchJson<{ data: ProjectItem[] }>(`${API_BASE_URL}/projects/limit/${limit}`, `Gagal mengambil ${limit} proyek`);
+    return json.data;
+};
+
+export const fetchProjectDetail = async (id: string): Promise<ProjectItem> => {
+    const json = await fetchJson<{ data: ProjectItem }>(`${API_BASE_URL}/projects/${id}`, `Gagal mengambil detail Project ${id}`);
+    return json.data;
 };
 
 export interface CreateProjectPayload {
@@ -401,63 +311,101 @@ export interface CreateProjectResponse {
 
 export const createProject = async (payload: CreateProjectPayload): Promise<CreateProjectResponse> => {
     const formData = new FormData();
-
-    // Add text fields
     formData.append('title', payload.title);
     formData.append('category', payload.category);
     formData.append('description', payload.description);
     formData.append('author', payload.author);
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
+    if (payload.imageUrl) formData.append('imageUrl', payload.imageUrl);
 
-    // Add image
-    if (payload.imageUrl) {
-        formData.append('imageUrl', payload.imageUrl);
-    }
-
-    // Add documents with metadata
-    if (payload.documents && payload.documents.length > 0) {
-        payload.documents.forEach((file) => {
-            formData.append('documents[]', file);
-        });
-
-        // Add document types
-        if (payload.document_types && payload.document_types.length > 0) {
-            payload.document_types.forEach((type) => {
-                formData.append('document_types[]', type);
-            });
-        }
-
-        // Add document titles
-        if (payload.document_titles && payload.document_titles.length > 0) {
-            payload.document_titles.forEach((title) => {
-                formData.append('document_titles[]', title);
-            });
-        }
+    if (payload.documents?.length) {
+        payload.documents.forEach(file => formData.append('documents[]', file));
+        payload.document_types?.forEach(type => formData.append('document_types[]', type));
+        payload.document_titles?.forEach(title => formData.append('document_titles[]', title));
     }
 
     const response = await fetch(`${API_BASE_URL}/api/projects`, {
         method: 'POST',
         body: formData,
-        headers: {
-            'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
     });
 
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal membuat proyek: Response bukan JSON');
-    }
+    return handleSimpleResponse(response, 'Gagal membuat proyek');
+};
 
-    if (!response.ok) {
-        throw new Error(
-            data?.message || `Gagal membuat proyek: (${response.status})`
-        );
-    }
+export interface UpdateProjectPayload extends CreateProjectPayload {
+    id: number;
+}
 
-    return data as CreateProjectResponse;
+export const updateProject = async (payload: UpdateProjectPayload): Promise<CreateProjectResponse> => {
+    const formData = new FormData();
+    formData.append('title', payload.title);
+    formData.append('category', payload.category);
+    formData.append('description', payload.description);
+    formData.append('author', payload.author);
+    formData.append('date', payload.date);
+    formData.append('jenjang', payload.jenjang);
+    if (payload.imageUrl) formData.append('imageUrl', payload.imageUrl);
+
+    if (payload.documents?.length) {
+        payload.documents.forEach(file => formData.append('documents[]', file));
+        payload.document_types?.forEach(type => formData.append('document_types[]', type));
+        payload.document_titles?.forEach(title => formData.append('document_titles[]', title));
+    }
+    formData.append('_method', 'PUT');
+
+    const response = await fetch(`${API_BASE_URL}/api/projects/${payload.id}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+    });
+
+    return handleSimpleResponse(response, 'Gagal mengupdate proyek');
+};
+
+export const deleteProject = async (id: string | number): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' }
+    });
+    return handleSimpleResponse(response, 'Gagal menghapus proyek');
+};
+
+export const deleteProjectDocument = async (projectId: string | number, documentUrl: string): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/document`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ document_url: documentUrl })
+    });
+    return handleSimpleResponse(response, 'Gagal menghapus dokumen');
+};
+
+export interface DeleteResponse {
+    message: string;
+}
+
+
+/* ================= JOURNALS ================= */
+
+export const fetchJournals = async (): Promise<JournalItem[]> => {
+    const json = await fetchJson<{ data: JournalItem[] }>(`${API_BASE_URL}/journals`, 'Gagal mengambil data Jurnal');
+    return json.data;
+};
+
+export const fetchJournalsWithLimit = async (limit: number): Promise<JournalItem[]> => {
+    const json = await fetchJson<{ data: JournalItem[] }>(`${API_BASE_URL}/journals/limit/${limit}`, `Gagal mengambil ${limit} jurnal`);
+    return json.data;
+};
+
+export const fetchBestJournals = async (): Promise<JournalItem[]> => {
+    const json = await fetchJson<{ data: JournalItem[] }>(`${API_BASE_URL}/journals/best`, 'Gagal mengambil data Jurnal Terbaik');
+    return json.data;
+};
+
+export const fetchJournalDetail = async (id: string): Promise<JournalItem> => {
+    const json = await fetchJson<{ data: JournalItem }>(`${API_BASE_URL}/journals/${id}`, `Gagal mengambil detail Jurnal ${id}`);
+    return json.data;
 };
 
 export interface CreateJournalPayload {
@@ -480,8 +428,6 @@ export interface CreateJournalResponse {
 
 export const createJournal = async (payload: CreateJournalPayload): Promise<CreateJournalResponse> => {
     const formData = new FormData();
-
-    // Add text fields
     formData.append('title', payload.title);
     formData.append('category', payload.category);
     formData.append('abstract', payload.abstract);
@@ -491,160 +437,15 @@ export const createJournal = async (payload: CreateJournalPayload): Promise<Crea
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
     formData.append('is_best', payload.is_best ? '1' : '0');
-
-    // Add PDF document if provided
-    if (payload.documentUrl) {
-        formData.append('documentUrl', payload.documentUrl);
-    }
+    if (payload.documentUrl) formData.append('documentUrl', payload.documentUrl);
 
     const response = await fetch(`${API_BASE_URL}/api/journals`, {
         method: 'POST',
         body: formData,
-        headers: {
-            'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
     });
 
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal membuat jurnal: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(
-            data?.message || `Gagal membuat jurnal: (${response.status})`
-        );
-    }
-
-    return data as CreateJournalResponse;
-};
-
-// ==================== UPDATE FUNCTIONS ====================
-
-export interface UpdateNewsPayload extends CreateNewsPayload {
-    id: number;
-}
-
-export const updateNews = async (payload: UpdateNewsPayload): Promise<CreateNewsResponse> => {
-    const formData = new FormData();
-
-    // Add text fields
-    formData.append('title', payload.title);
-    formData.append('excerpt', payload.excerpt);
-    formData.append('content', payload.content);
-    formData.append('date', payload.date);
-    formData.append('category', payload.category);
-    formData.append('jenjang', payload.jenjang);
-
-    if (payload.level) {
-        formData.append('level', payload.level);
-    }
-
-    // Add main image if provided
-    if (payload.main_image) {
-        formData.append('main_image', payload.main_image);
-    }
-
-    // Add gallery images if provided
-    if (payload.gallery && payload.gallery.length > 0) {
-        payload.gallery.forEach((file) => {
-            formData.append('gallery[]', file);
-        });
-    }
-
-    // Laravel PUT/PATCH file upload workaround
-    formData.append('_method', 'PUT');
-
-    const response = await fetch(`${API_BASE_URL}/api/news/${payload.id}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'Accept': 'application/json'
-        }
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal mengupdate berita: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(
-            data?.message || `Gagal mengupdate berita: (${response.status})`
-        );
-    }
-
-    return data as CreateNewsResponse;
-};
-
-export interface UpdateProjectPayload extends CreateProjectPayload {
-    id: number;
-}
-
-export const updateProject = async (payload: UpdateProjectPayload): Promise<CreateProjectResponse> => {
-    const formData = new FormData();
-
-    // Add text fields
-    formData.append('title', payload.title);
-    formData.append('category', payload.category);
-    formData.append('description', payload.description);
-    formData.append('author', payload.author);
-    formData.append('date', payload.date);
-    formData.append('jenjang', payload.jenjang);
-
-    // Add image if provided
-    if (payload.imageUrl) {
-        formData.append('imageUrl', payload.imageUrl);
-    }
-
-    // Add documents with metadata if provided
-    if (payload.documents && payload.documents.length > 0) {
-        payload.documents.forEach((file) => {
-            formData.append('documents[]', file);
-        });
-
-        if (payload.document_types && payload.document_types.length > 0) {
-            payload.document_types.forEach((type) => {
-                formData.append('document_types[]', type);
-            });
-        }
-
-        if (payload.document_titles && payload.document_titles.length > 0) {
-            payload.document_titles.forEach((title) => {
-                formData.append('document_titles[]', title);
-            });
-        }
-    }
-
-    // Laravel PUT/PATCH file upload workaround
-    formData.append('_method', 'PUT');
-
-    const response = await fetch(`${API_BASE_URL}/api/projects/${payload.id}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'Accept': 'application/json'
-        }
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal mengupdate proyek: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(
-            data?.message || `Gagal mengupdate proyek: (${response.status})`
-        );
-    }
-
-    return data as CreateProjectResponse;
+    return handleSimpleResponse(response, 'Gagal membuat jurnal');
 };
 
 export interface UpdateJournalPayload extends CreateJournalPayload {
@@ -653,8 +454,6 @@ export interface UpdateJournalPayload extends CreateJournalPayload {
 
 export const updateJournal = async (payload: UpdateJournalPayload): Promise<CreateJournalResponse> => {
     const formData = new FormData();
-
-    // Add text fields
     formData.append('title', payload.title);
     formData.append('category', payload.category);
     formData.append('abstract', payload.abstract);
@@ -664,218 +463,35 @@ export const updateJournal = async (payload: UpdateJournalPayload): Promise<Crea
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
     formData.append('is_best', payload.is_best ? '1' : '0');
-
-    // Add PDF document if provided
-    if (payload.documentUrl) {
-        formData.append('documentUrl', payload.documentUrl);
-    }
-
-    // Laravel PUT/PATCH file upload workaround
+    if (payload.documentUrl) formData.append('documentUrl', payload.documentUrl);
     formData.append('_method', 'PUT');
 
     const response = await fetch(`${API_BASE_URL}/api/journals/${payload.id}`, {
         method: 'POST',
         body: formData,
-        headers: {
-            'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
     });
 
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal mengupdate jurnal: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(
-            data?.message || `Gagal mengupdate jurnal: (${response.status})`
-        );
-    }
-
-    return data as CreateJournalResponse;
-};
-
-// ==================== DELETE FUNCTIONS ====================
-
-export interface DeleteResponse {
-    message: string;
-}
-
-export const deleteNews = async (id: string | number): Promise<DeleteResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/news/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Accept': 'application/json'
-        }
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal menghapus berita: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal menghapus berita: (${response.status})`);
-    }
-
-    return data as DeleteResponse;
-};
-
-export const deleteNewsGalleryImage = async (newsId: string | number, imageUrl: string): Promise<DeleteResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/news/${newsId}/gallery`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({ image_url: imageUrl })
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal menghapus gambar galeri: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal menghapus gambar galeri: (${response.status})`);
-    }
-
-    return data as DeleteResponse;
-};
-
-export const deleteProject = async (id: string | number): Promise<DeleteResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Accept': 'application/json'
-        }
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal menghapus proyek: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal menghapus proyek: (${response.status})`);
-    }
-
-    return data as DeleteResponse;
-};
-
-export const deleteProjectDocument = async (projectId: string | number, documentUrl: string): Promise<DeleteResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/document`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({ document_url: documentUrl })
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal menghapus dokumen: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal menghapus dokumen: (${response.status})`);
-    }
-
-    return data as DeleteResponse;
+    return handleSimpleResponse(response, 'Gagal mengupdate jurnal');
 };
 
 export const deleteJournal = async (id: string | number): Promise<DeleteResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/journals/${id}`, {
         method: 'DELETE',
-        headers: {
-            'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
     });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal menghapus jurnal: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal menghapus jurnal: (${response.status})`);
-    }
-
-    return data as DeleteResponse;
+    return handleSimpleResponse(response, 'Gagal menghapus jurnal');
 };
 
-export interface ContactUsPayload {
-    name: string;
-    contact_info: string;
-    message: string;
-    jenjang: string;
-}
 
-export const submitContactUs = async (payload: ContactUsPayload): Promise<{ message: string }> => {
-    const response = await fetch(`${API_BASE_URL}/api/contact-us`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
+/* ================= FACILITIES ================= */
 
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal mengirim pesan: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal mengirim pesan: (${response.status})`);
-    }
-
-    return data;
+export const fetchFacilities = async (): Promise<Facility[]> => {
+    const json = await fetchJson<{ data: Facility[] }>(`${API_BASE_URL}/facilities`, 'Gagal mengambil data Fasilitas');
+    return json.data;
 };
 
-export interface ComplaintPayload {
-    name: string;
-    contact_info: string;
-    category: string;
-    message: string;
-    jenjang: string;
-}
-
-export const submitComplaint = async (payload: ComplaintPayload): Promise<{ message: string }> => {
-    const response = await fetch(`${API_BASE_URL}/api/complaints`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
-
-    let data: any = null;
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error('Gagal mengirim pengaduan: Response bukan JSON');
-    }
-
-    if (!response.ok) {
-        throw new Error(data?.message || `Gagal mengirim pengaduan: (${response.status})`);
-    }
-
-    return data;
+export const fetchFacilityDetail = async (id: string): Promise<Facility> => {
+    const json = await fetchJson<{ data: Facility }>(`${API_BASE_URL}/facilities/${id}`, `Gagal mengambil detail Fasilitas ${id}`);
+    return json.data;
 };

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { MOCK_PROJECTS, SCHOOL_NAME } from '../constants'; // Fallback
+import { SCHOOL_NAME } from '../constants'; // Fallback
 import { fetchProjectCategories, fetchProjectsWithLimit } from '../services/api';
 import { Layers, Tag, LayoutGrid, ChevronRight, Loader2 } from 'lucide-react';
 import { LevelContext } from '../App';
@@ -8,25 +8,33 @@ import { Link } from 'react-router-dom';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 import ProjectCard from '../components/ProjectCard';
 import SkeletonProjectCard from '../components/SkeletonProjectCard';
+import { useCache } from '../context/CacheContext';
 
 const Projects: React.FC = () => {
+  const { homeCache, setHomeCache } = useCache();
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
   const [subFilter, setSubFilter] = useState<EducationLevel | 'SEMUA'>('SEMUA');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
-  const [categories, setCategories] = useState<string[]>(['Semua']);
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
-  const [catLoading, setCatLoading] = useState(true);
-  const [projLoading, setProjLoading] = useState(true);
-  const [limit, setLimit] = useState(6);
+
+  const [categories, setCategories] = useState<string[]>(homeCache.projectCategories && homeCache.projectCategories.length > 0 ? homeCache.projectCategories : ['Semua']);
+  const [projects, setProjects] = useState<ProjectItem[]>(homeCache.allProjects || []);
+
+  const [catLoading, setCatLoading] = useState(homeCache.projectCategories && homeCache.projectCategories.length > 0 ? false : true);
+  const [projLoading, setProjLoading] = useState(!homeCache.isProjectsLoaded);
+
+  const [limit, setLimit] = useState(homeCache.allProjects?.length || 6);
   const [hasMore, setHasMore] = useState(true);
   const theme = LEVEL_CONFIG[activeLevel];
 
   useEffect(() => {
+    if (homeCache.projectCategories && homeCache.projectCategories.length > 0) return;
+
     const loadCategories = async () => {
       try {
         const catsData = await fetchProjectCategories();
         setCategories(catsData);
+        setHomeCache({ projectCategories: catsData });
       } catch (error) {
         console.error('Error loading categories:', error);
       } finally {
@@ -37,11 +45,18 @@ const Projects: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (homeCache.isProjectsLoaded && projects.length >= limit) {
+      setProjLoading(false);
+      return;
+    }
+
     const loadProjects = async () => {
       setProjLoading(true);
       try {
         const projectsData = await fetchProjectsWithLimit(limit);
         setProjects(projectsData);
+        setHomeCache({ allProjects: projectsData, isProjectsLoaded: true });
+
         if (projectsData.length < limit) {
           setHasMore(false);
         } else {

@@ -9,15 +9,22 @@ import { useLevelConfig } from '../hooks/useLevelConfig';
 import { NewsItem } from '../types';
 import NewsCard from '../components/NewsCard';
 import SkeletonNewsCard from '../components/SkeletonNewsCard';
+import { useCache } from '../context/CacheContext';
 
 const News: React.FC = () => {
+  const { homeCache, setHomeCache } = useCache();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
-  const [categories, setCategories] = useState<string[]>(['Semua']);
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [catLoading, setCatLoading] = useState(true);
-  const [newsLoading, setNewsLoading] = useState(true);
-  const [limit, setLimit] = useState(6);
+
+  // Init data from cache
+  const [categories, setCategories] = useState<string[]>(homeCache.newsCategories && homeCache.newsCategories.length > 0 ? homeCache.newsCategories : ['Semua']);
+  const [news, setNews] = useState<NewsItem[]>(homeCache.allNews || []);
+
+  const [catLoading, setCatLoading] = useState(homeCache.newsCategories && homeCache.newsCategories.length > 0 ? false : true);
+  const [newsLoading, setNewsLoading] = useState(!homeCache.isNewsLoaded);
+
+  const [limit, setLimit] = useState(homeCache.allNews?.length || 6);
   const [hasMore, setHasMore] = useState(true);
 
   const { activeLevel } = useContext(LevelContext);
@@ -25,10 +32,13 @@ const News: React.FC = () => {
 
   // Initial Data Load (Categories)
   useEffect(() => {
+    if (homeCache.newsCategories && homeCache.newsCategories.length > 0) return;
+
     const loadCategories = async () => {
       try {
         const catsData = await fetchNewsCategories();
         setCategories(catsData);
+        setHomeCache({ newsCategories: catsData });
       } catch (error) {
         console.error('Error loading categories:', error);
       } finally {
@@ -40,11 +50,19 @@ const News: React.FC = () => {
 
   // News Data Load (with limit)
   useEffect(() => {
+    // If loaded from cache and we have enough data for current limit, skip fetch
+    if (homeCache.isNewsLoaded && news.length >= limit) {
+      setNewsLoading(false);
+      return;
+    }
+
     const loadNews = async () => {
       setNewsLoading(true);
       try {
         const newsData = await fetchNewsWithLimit(limit);
         setNews(newsData);
+        setHomeCache({ allNews: newsData, isNewsLoaded: true });
+
         // If we received fewer items than requested limit, we've reached the end
         if (newsData.length < limit) {
           setHasMore(false);

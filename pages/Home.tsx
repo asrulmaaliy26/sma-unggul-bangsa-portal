@@ -1,38 +1,109 @@
 import React, { useContext, useEffect, useState } from 'react';
 import Carousel from '../components/Carousel';
-import { MOCK_JOURNALS } from '../constants'; // Fallback
+
 import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap, Building, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
-import { Slide, Stat, NewsItem, JournalItem, InstitutionProfile } from '../types';
-import { fetchHomeData, fetchLatestNews, fetchJournals, fetchBestJournals, fetchNewsWithLimitAndLevel } from '../services/api';
+import { Slide, Stat, NewsItem, JournalItem, InstitutionProfile, ProjectItem } from '../types';
+import SkeletonHomeNewsCard from '../components/SkeletonHomeNewsCard';
+import SkeletonBestJournal from '../components/SkeletonBestJournal';
+import SkeletonProjectCard from '../components/SkeletonProjectCard';
+import { fetchLatestNews, fetchJournals, fetchBestJournals, fetchNewsWithLimitAndLevel, fetchProjectsWithLimit } from '../services/api';
 import { useLevelConfig } from '../hooks/useLevelConfig';
+import { useCache } from '../context/CacheContext';
 
 const Home: React.FC = () => {
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
   const theme = LEVEL_CONFIG[activeLevel];
-  const [allStats, setAllStats] = useState<Record<string, Stat[]>>({});
-  const [slides, setSlides] = useState<Slide[]>([]);
-  const [profile, setProfile] = useState<InstitutionProfile | null>(null);
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [journals, setJournals] = useState<JournalItem[]>([]);
-  const [bestJournals, setBestJournals] = useState<JournalItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use Cache
+  const { homeCache, setHomeCache } = useCache();
+
+  // State initialization from cache if available, otherwise defaults
+  const [allStats, setAllStats] = useState<Record<string, Stat[]>>(homeCache.stats || {});
+  const [slides, setSlides] = useState<Slide[]>(homeCache.slides || []);
+  const [profile, setProfile] = useState<InstitutionProfile | null>(homeCache.profile || null);
+  const [news, setNews] = useState<NewsItem[]>(homeCache.news || []);
+  const [projects, setProjects] = useState<ProjectItem[]>(homeCache.projects || []);
+  const [journals, setJournals] = useState<JournalItem[]>(homeCache.journals || []);
+  const [bestJournals, setBestJournals] = useState<JournalItem[]>(homeCache.bestJournals || []);
+  const [loading, setLoading] = useState(!homeCache.isLoaded);
+  const [loadingNews, setLoadingNews] = useState(!homeCache.isLoaded);
 
   useEffect(() => {
+    // If cache is loaded, we don't need to refetch global data
+    if (homeCache.isLoaded) {
+      setLoading(false);
+      setLoadingNews(false);
+      return;
+    }
+
     const loadGlobalData = async () => {
       try {
-        const [homeData, journalsData, bestJournalsData] = await Promise.all([
-          fetchHomeData(),
+        const [journalsData, bestJournalsData, projectsData] = await Promise.all([
           fetchJournals(),
-          fetchBestJournals()
+          fetchBestJournals(),
+          fetchProjectsWithLimit(2)
         ]);
-        setAllStats(homeData.stats);
-        setSlides(homeData.slides);
-        if (homeData.profile) setProfile(homeData.profile);
+
+        // Load Slides from ENV locally
+        let loadedSlides: Slide[] = [];
+        const envSlides = import.meta.env.VITE_HOME_SLIDES;
+        if (envSlides) {
+          try {
+            const parsed = JSON.parse(envSlides);
+            if (Array.isArray(parsed)) loadedSlides = parsed;
+          } catch (e) {
+            console.error("Invalid VITE_HOME_SLIDES", e);
+          }
+        }
+
+        // Load Profile from ENV locally
+        let loadedProfile: InstitutionProfile | null = null;
+        const envProfile: InstitutionProfile = {
+          title: import.meta.env.VITE_PROFILE_TITLE || '',
+          description: import.meta.env.VITE_PROFILE_DESC || '',
+          imageUrl: import.meta.env.VITE_PROFILE_IMAGE || ''
+        };
+        if (envProfile.title || envProfile.description) {
+          loadedProfile = envProfile;
+        }
+
+        // Load Stats from ENV locally
+        let loadedStats: Record<string, Stat[]> = {};
+        const envStats = import.meta.env.VITE_HOME_STATS;
+        if (envStats) {
+          try {
+            const parsedStats = JSON.parse(envStats);
+            if (Array.isArray(parsedStats)) {
+              loadedStats = { 'UMUM': parsedStats, 'MA': parsedStats, 'SMA': parsedStats, 'SMP': parsedStats, 'SD': parsedStats, 'TK': parsedStats, 'KAMPUS': parsedStats, 'STAI': parsedStats };
+            }
+          } catch (e) {
+            console.error("Invalid VITE_HOME_STATS", e);
+          }
+        }
+
+        // Update Local State
         setJournals(journalsData);
         setBestJournals(bestJournalsData);
+        setProjects(projectsData);
+        setSlides(loadedSlides);
+        if (loadedProfile) setProfile(loadedProfile);
+        setAllStats(loadedStats);
+
+        // Update Cache
+        setHomeCache({
+          journals: journalsData,
+          bestJournals: bestJournalsData,
+          projects: projectsData,
+          slides: loadedSlides,
+          profile: loadedProfile,
+          stats: loadedStats,
+          // We mark as loaded but news is fetched separately per level usually, 
+          // but here we can just say global data is loaded.
+          isLoaded: true
+        });
+
       } catch (error) {
         console.error('Error loading home data:', error);
       } finally {
@@ -45,6 +116,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     const loadNewsData = async () => {
+      setLoadingNews(true);
       try {
         let newsData: NewsItem[];
         if (activeLevel === 'UMUM') {
@@ -57,6 +129,8 @@ const Home: React.FC = () => {
         }
       } catch (error) {
         console.error('Error loading news data:', error);
+      } finally {
+        if (isMounted) setLoadingNews(false);
       }
     };
     loadNewsData();
@@ -69,7 +143,18 @@ const Home: React.FC = () => {
   // Filtering data berdasarkan level
   // News fetching is now handled per level, so we rely on API response directly.
   const newsList = news;
-  // const projectList = activeLevel === 'UMUM' ? MOCK_PROJECTS : MOCK_PROJECTS.filter(p => p.jenjang === activeLevel);
+
+  // Filter projects by activeLevel if needed, though we fetched global 2 limit.
+  // The user requested "2 projek terakhir di bagian home". Usually this means global latest, 
+  // but let's filter if not UMUM to be safe, or just show top 2 regardless if it's "Showcase".
+  // If we filter client side from a fetch(2), we might get 0. 
+  // Ideally we should have fetchProjectsWithLimitAndLevel, but api.ts only has fetchProjectsWithLimit.
+  // For now, let's assume specific level filtering isn't strictly enforced for the "Latest" showcase unless requested.
+  // However, consistent with other sections, let's try to filter if we had more data.
+  // Since we only fetched 2, let's just show them. 
+  // NOTE: If strictly per level, we should update the API call in future. For now, matching general request.
+  const projectList = projects;
+
   const journalList = activeLevel === 'UMUM' ? journals : journals.filter(j => j.jenjang === activeLevel);
 
   // Logic untuk memilih stats berdasarkan activeLevel
@@ -170,37 +255,48 @@ const Home: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {newsList.slice(0, 3).map(news => (
-              <Link to={`/berita/${news.id}`} key={news.id} className="bg-white rounded-[2.5rem] overflow-hidden hover:-translate-y-3 transition-all duration-500 group border border-white/5">
-                <div className="relative h-64 overflow-hidden">
-                  <img src={news.main_image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className={`absolute top-6 left-6 ${theme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg`}>
-                    {news.jenjang}
+            {loadingNews ? (
+              Array(3).fill(0).map((_, i) => <SkeletonHomeNewsCard key={i} />)
+            ) : newsList.length > 0 ? (
+              newsList.slice(0, 3).map(news => (
+                <Link to={`/berita/${news.id}`} key={news.id} className="bg-white rounded-[2.5rem] overflow-hidden hover:-translate-y-3 transition-all duration-500 group border border-white/5">
+                  <div className="relative h-64 overflow-hidden">
+                    <img src={news.main_image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <div className={`absolute top-6 left-6 ${theme.bg} text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg`}>
+                      {news.jenjang}
+                    </div>
                   </div>
-                </div>
-                <div className="p-8">
-                  <h4 className="text-xl font-black text-slate-900 mb-4 line-clamp-2 hover:text-islamic-gold-500 transition-colors">
-                    {news.title}
-                  </h4>
-                  <p className="text-slate-500 text-sm mb-8 line-clamp-2 leading-relaxed">
-                    {news.excerpt}
-                  </p>
-                  <span className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
-                    Selengkapnya <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <div className="p-8">
+                    <h4 className="text-xl font-black text-slate-900 mb-4 line-clamp-2 hover:text-islamic-gold-500 transition-colors">
+                      {news.title}
+                    </h4>
+                    <p className="text-slate-500 text-sm mb-8 line-clamp-2 leading-relaxed">
+                      {news.excerpt}
+                    </p>
+                    <span className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
+                      Selengkapnya <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-20 bg-white/5 rounded-[2.5rem] border border-white/10">
+                <Newspaper className="w-16 h-16 text-white/20 mx-auto mb-4" />
+                <p className="text-white/40 font-bold">Belum ada berita terkini.</p>
+              </div>
+            )}
           </div>
         </div>
         <div className="absolute top-0 right-0 w-full h-full opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>
       </section>
 
       {/* Best Journal Section */}
-      {topJournal && (
-        <section className="max-w-7xl mx-auto px-4 md:px-8">
-          <h2 className="text-4xl font-black text-black leading-tight">Best Journal</h2>
-          <div className="bg-slate-50 rounded-[3rem] p-16 border border-slate-100 flex flex-col lg:flex-row gap-16 items-center">
+      {loading ? (
+        <SkeletonBestJournal />
+      ) : topJournal && (
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mt-20">
+          <h2 className="text-4xl font-black text-black leading-tight mb-8">Best Journal</h2>
+          <div className="bg-slate-50 rounded-[3rem] p-10 md:p-16 border border-slate-100 flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
               <div className="bg-islamic-gold-500 text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase mb-8 w-fit shadow-xl shadow-islamic-gold-100">Jurnal Akademik Terbaik ({topJournal.jenjang})</div>
               <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-8 leading-tight">{topJournal.title}</h2>
@@ -231,6 +327,67 @@ const Home: React.FC = () => {
           </div>
         </section>
       )}
+
+      {/* Latest Projects Section */}
+      <section className="bg-slate-900 py-24 relative overflow-hidden my-20 rounded-[4rem] mx-4 md:mx-8">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-6">
+            <div>
+              <h3 className="text-islamic-gold-500 font-black uppercase tracking-[0.3em] text-xs mb-4">Inovasi Santri</h3>
+              <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">Karya & Projek Terbaru</h2>
+            </div>
+            <Link to="/projek" className="bg-white/10 backdrop-blur-md text-white px-8 py-3 rounded-full font-bold hover:bg-white/20 transition-all border border-white/10 flex items-center gap-2 shadow-2xl">
+              Lihat Galeri <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {loading ? (
+              Array(2).fill(0).map((_, i) => <SkeletonProjectCard key={i} />)
+            ) : projectList.length > 0 ? (
+              projectList.map(project => (
+                <Link to={`/projek/${project.id}`} key={project.id} className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-xl hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 group flex flex-col h-full relative">
+                  <div className="relative h-72 overflow-hidden">
+                    <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                    <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-md text-slate-900 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
+                      {project.category}
+                    </div>
+                  </div>
+                  <div className="p-10 flex flex-col flex-1 relative bg-white">
+                    <div className="-mt-16 mb-6 relative z-10 flex justify-between items-end">
+                      <span className={`px-4 py-2 rounded-xl ${LEVEL_CONFIG[project.jenjang]?.bg || 'bg-slate-800'} text-white text-[10px] font-black shadow-lg uppercase tracking-widest`}>{project.jenjang}</span>
+                      <div className="bg-white p-3 rounded-2xl text-slate-900 shadow-xl group-hover:bg-islamic-gold-500 group-hover:text-white transition-colors duration-500">
+                        <Lightbulb className="w-6 h-6" />
+                      </div>
+                    </div>
+                    <h3 className="text-3xl font-black text-slate-900 mb-6 leading-tight group-hover:text-islamic-gold-600 transition-colors">{project.title}</h3>
+                    <p className="text-slate-500 leading-relaxed mb-10 line-clamp-2 text-lg">{project.description}</p>
+
+                    <div className="mt-auto pt-8 border-t border-slate-100 flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-2xl ${LEVEL_CONFIG[project.jenjang]?.bg || 'bg-slate-200'} flex items-center justify-center text-white font-black text-lg shadow-lg`}>
+                        {project.author.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-wider mb-1">{project.author}</p>
+                        <p className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md inline-block">{project.date}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-32 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                <Lightbulb className="w-16 h-16 text-white/20 mx-auto mb-6" />
+                <p className="text-white/40 font-bold">Belum ada projek terbaru.</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-islamic-gold-500 rounded-full blur-[128px] opacity-20 pointer-events-none"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-islamic-green-500 rounded-full blur-[128px] opacity-20 pointer-events-none"></div>
+      </section>
     </div>
   );
 };

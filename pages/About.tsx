@@ -1,7 +1,7 @@
 
 import React, { useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MOCK_NEWS } from '../constants';
+
 import { fetchNewsByCategory } from '../services/api';
 import { AboutData, NewsItem } from '../types';
 import { Target, Flag, Award, ShieldCheck, Heart, Star, BookOpen, GraduationCap, Calendar, Users, Building, Loader2 } from 'lucide-react';

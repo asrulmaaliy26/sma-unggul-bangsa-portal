@@ -1,6 +1,6 @@
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { MOCK_FACILITIES, SCHOOL_NAME } from '../constants'; // Fallback
+import { SCHOOL_NAME } from '../constants'; // Fallback
 import { fetchFacilities } from '../services/api';
 import { Layout, Zap, Layers, MapPin, ChevronRight, Search } from 'lucide-react';
 import { LevelContext } from '../App';
@@ -12,10 +12,12 @@ import SkeletonFacilityCard from '../components/SkeletonFacilityCard';
 import FacilityModal from '../components/FacilityModal';
 
 import { getDefaultLevel } from '../services/api';
+import { useCache } from '../context/CacheContext';
 
 // ... (imports remain)
 
 const Facilities: React.FC = () => {
+  const { homeCache, setHomeCache } = useCache();
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
 
@@ -28,8 +30,8 @@ const Facilities: React.FC = () => {
 
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'fasilitas' | 'ekstra'>('ALL');
 
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [facilities, setFacilities] = useState<Facility[]>(homeCache.allFacilities || []);
+  const [loading, setLoading] = useState(!homeCache.isFacilitiesLoaded);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
@@ -47,10 +49,16 @@ const Facilities: React.FC = () => {
   const theme = LEVEL_CONFIG[activeLevel];
 
   useEffect(() => {
+    if (homeCache.isFacilitiesLoaded && facilities.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
         const data = await fetchFacilities();
         setFacilities(data);
+        setHomeCache({ allFacilities: data, isFacilitiesLoaded: true });
       } catch (error) {
         console.error('Error loading facilities:', error);
       } finally {

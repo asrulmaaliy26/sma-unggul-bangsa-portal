@@ -50,9 +50,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between h-20">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className={`${currentTheme.bg} p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-black/10`}>
-                <School className="text-white w-7 h-7" />
-              </div>
+              <img src={import.meta.env.VITE_APP_LOGO} alt="Logo" className="w-10 h-10 object-contain rounded-full group-hover:rotate-6 transition-transform drop-shadow-md" />
               <div className="flex flex-col">
                 <span className="font-bold text-lg tracking-tight text-slate-900 leading-none">{currentTheme.name}</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Lembaga Pendidikan Islam</span>
