@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { NewsItem, ProjectItem, JournalItem, Slide, Stat, InstitutionProfile, Facility } from '../types';
+import { NewsItem, ProjectItem, JournalItem, Slide, Stat, InstitutionProfile, Facility, Testimonial } from '../types';
 
 interface HomeCache {
     news: NewsItem[];
@@ -10,6 +10,7 @@ interface HomeCache {
     slides: Slide[];
     profile: InstitutionProfile | null;
     stats: Record<string, Stat[]>;
+    testimonials: Testimonial[];
     isLoaded: boolean;
 
     // News Page Cache
@@ -45,6 +46,7 @@ const defaultCache: HomeCache = {
     slides: [],
     profile: null,
     stats: {},
+    testimonials: [],
     isLoaded: false,
 
     allNews: [],

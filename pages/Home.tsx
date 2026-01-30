@@ -1,10 +1,15 @@
 import React, { useContext, useEffect, useState } from 'react';
 import Carousel from '../components/Carousel';
 
-import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap, Building, CheckCircle2 } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination as SwiperPagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
+import { ArrowRight, BookOpen, Newspaper, Lightbulb, Star, Users, GraduationCap, Building, CheckCircle2, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LevelContext } from '../App';
-import { Slide, Stat, NewsItem, JournalItem, InstitutionProfile, ProjectItem } from '../types';
+import { Slide, Stat, NewsItem, JournalItem, InstitutionProfile, ProjectItem, Testimonial } from '../types';
 import SkeletonHomeNewsCard from '../components/SkeletonHomeNewsCard';
 import SkeletonBestJournal from '../components/SkeletonBestJournal';
 import SkeletonProjectCard from '../components/SkeletonProjectCard';
@@ -27,6 +32,7 @@ const Home: React.FC = () => {
   const [projects, setProjects] = useState<ProjectItem[]>(homeCache.projects || []);
   const [journals, setJournals] = useState<JournalItem[]>(homeCache.journals || []);
   const [bestJournals, setBestJournals] = useState<JournalItem[]>(homeCache.bestJournals || []);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(homeCache.testimonials || []);
   const [loading, setLoading] = useState(!homeCache.isLoaded);
   const [loadingNews, setLoadingNews] = useState(!homeCache.isLoaded);
 
@@ -45,6 +51,18 @@ const Home: React.FC = () => {
           fetchBestJournals(),
           fetchProjectsWithLimit(2)
         ]);
+
+        // Load Testimonials from ENV locally
+        let loadedTestimonials: Testimonial[] = [];
+        const envTestimonials = import.meta.env.VITE_HOME_TESTIMONIALS;
+        if (envTestimonials) {
+          try {
+            const parsed = JSON.parse(envTestimonials);
+            if (Array.isArray(parsed)) loadedTestimonials = parsed;
+          } catch (e) {
+            console.error("Invalid VITE_HOME_TESTIMONIALS", e);
+          }
+        }
 
         // Load Slides from ENV locally
         let loadedSlides: Slide[] = [];
@@ -90,6 +108,7 @@ const Home: React.FC = () => {
         setSlides(loadedSlides);
         if (loadedProfile) setProfile(loadedProfile);
         setAllStats(loadedStats);
+        setTestimonials(loadedTestimonials);
 
         // Update Cache
         setHomeCache({
@@ -99,6 +118,7 @@ const Home: React.FC = () => {
           slides: loadedSlides,
           profile: loadedProfile,
           stats: loadedStats,
+          testimonials: loadedTestimonials,
           // We mark as loaded but news is fetched separately per level usually, 
           // but here we can just say global data is loaded.
           isLoaded: true
@@ -325,6 +345,55 @@ const Home: React.FC = () => {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* Testimonials / Kata Mutiara Section */}
+      {testimonials.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mt-24 mb-16 relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-islamic-green-50/50 via-white to-islamic-gold-50/50 rounded-full blur-3xl -z-10 opacity-60"></div>
+
+          <div className="text-center mb-16 relative z-10">
+            <span className={`text-xs font-black uppercase tracking-[0.3em] ${theme.text} mb-3 block`}>Inspirasi Harian</span>
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">Kata Mutiara</h2>
+          </div>
+
+          <Swiper
+            modules={[Autoplay, SwiperPagination]}
+            spaceBetween={40}
+            slidesPerView={1}
+            autoplay={{ delay: 6000, disableOnInteraction: false }}
+            pagination={{ clickable: true, dynamicBullets: true }}
+            className="pb-16"
+          >
+            {testimonials.map((item, idx) => (
+              <SwiperSlide key={idx} className="px-4">
+                <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-8 md:p-14 border border-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] relative max-w-4xl mx-auto text-center overflow-hidden group hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] transition-all duration-500">
+                  {/* Decorative Elements */}
+                  <div className={`absolute top-0 left-0 w-full h-2 ${theme.bg}`}></div>
+                  <Quote className="absolute top-10 left-10 w-24 h-24 text-slate-100 -z-10 rotate-12 group-hover:rotate-0 transition-all duration-700" />
+                  <Quote className="absolute bottom-10 right-10 w-24 h-24 text-slate-100 -z-10 rotate-180 group-hover:rotate-12 transition-all duration-700 delay-100" />
+
+                  <div className="relative z-10 flex flex-col items-center">
+                    <div className="w-24 h-24 rounded-full p-1.5 bg-gradient-to-br from-islamic-gold-300 to-islamic-green-300 shadow-xl mb-8 group-hover:scale-110 transition-transform duration-500">
+                      <div className="w-full h-full rounded-full overflow-hidden border-4 border-white">
+                        <img src={item.image} alt={item.author} className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+
+                    <p className="text-xl md:text-3xl font-bold text-slate-800 leading-relaxed mb-10 max-w-2xl font-serif italic">
+                      "{item.text}"
+                    </p>
+
+                    <div className="flex flex-col items-center">
+                      <h4 className={`text-xl font-black ${theme.text} mb-1`}>{item.author}</h4>
+                      <div className="h-1 w-12 bg-slate-200 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </section>
       )}
 

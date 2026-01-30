@@ -73,6 +73,12 @@ export interface Slide {
   subtitle: string;
 }
 
+export interface Testimonial {
+  text: string;
+  author: string;
+  image: string;
+}
+
 export interface Stat {
   label: string;
   value: string;
