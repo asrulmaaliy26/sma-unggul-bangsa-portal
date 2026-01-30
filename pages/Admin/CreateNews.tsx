@@ -17,6 +17,8 @@ import {
   Trash2,
   Layers
 } from 'lucide-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { generateNewsArticle } from '../../services/gemini';
 import { createNews } from '../../services/api';
 import { EducationLevel } from '../../types';
@@ -323,13 +325,29 @@ const CreateNews: React.FC = () => {
                 <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
                   <AlignLeft className="w-4 h-4" /> Konten Berita
                 </label>
-                <textarea
-                  rows={12}
-                  className="w-full px-6 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] outline-none font-medium text-slate-700 leading-relaxed"
-                  placeholder="Tulis isi berita secara detail..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                ></textarea>
+                <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
+                  <ReactQuill
+                    theme="snow"
+                    value={content}
+                    onChange={setContent}
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                        ['link', 'image'],
+                        ['clean']
+                      ],
+                    }}
+                    formats={[
+                      'header',
+                      'bold', 'italic', 'underline', 'strike', 'blockquote',
+                      'list', 'bullet', 'indent',
+                      'link', 'image'
+                    ]}
+                    className="h-96 mb-12"
+                  />
+                </div>
               </div>
             </div>
           </section>

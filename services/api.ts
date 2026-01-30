@@ -1,7 +1,7 @@
 import { HomeData, CategoryData, LevelConfigData, AboutData, NewsItem, ProjectItem, JournalItem, Facility } from '../types';
 
-// const API_BASE_URL = 'https://admin.staialmannan.ac.id';
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://admin.staialmannan.ac.id';
+// const API_BASE_URL = 'http://localhost:8000';
 
 /**
  * Helper fetch dengan error detail
@@ -697,6 +697,30 @@ export const deleteNews = async (id: string | number): Promise<DeleteResponse> =
 
     if (!response.ok) {
         throw new Error(data?.message || `Gagal menghapus berita: (${response.status})`);
+    }
+
+    return data as DeleteResponse;
+};
+
+export const deleteNewsGalleryImage = async (newsId: string | number, imageUrl: string): Promise<DeleteResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/news/${newsId}/gallery`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ image_url: imageUrl })
+    });
+
+    let data: any = null;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error('Gagal menghapus gambar galeri: Response bukan JSON');
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.message || `Gagal menghapus gambar galeri: (${response.status})`);
     }
 
     return data as DeleteResponse;

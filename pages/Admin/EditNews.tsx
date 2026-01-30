@@ -5,8 +5,10 @@ import {
   ArrowLeft, Save, Sparkles, Wand2, Loader2,
   CheckCircle, Trophy, Plus, Trash2, Image as ImageIcon
 } from 'lucide-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { generateNewsArticle } from '../../services/gemini';
-import { updateNews, fetchNewsDetail } from '../../services/api';
+import { updateNews, fetchNewsDetail, deleteNewsGalleryImage } from '../../services/api';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
 import { EducationLevel } from '../../types';
 
@@ -104,6 +106,20 @@ const EditNews: React.FC = () => {
   const removeGalleryField = (index: number) => {
     const newGallery = gallery.filter((_, i) => i !== index);
     setGallery(newGallery);
+  };
+
+  const handleDeleteExistingGalleryImage = async (imageUrl: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus gambar ini dari galeri?')) return;
+
+    try {
+      await deleteNewsGalleryImage(newsId, imageUrl);
+      // Remove from state
+      setExistingGallery(prev => prev.filter(img => img !== imageUrl));
+      alert('Gambar berhasil dihapus dari galeri');
+    } catch (error: any) {
+      console.error('Error deleting gallery image:', error);
+      alert(error.message || 'Gagal menghapus gambar');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,18 +323,24 @@ const EditNews: React.FC = () => {
                   </button>
                 </div>
 
-                {existingGallery.length > 0 && gallery.length === 0 && (
-                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                    <p className="text-xs text-blue-700 font-medium mb-2">📷 Galeri saat ini ({existingGallery.length} foto):</p>
-                    <div className="flex flex-wrap gap-2">
-                      {existingGallery.map((url, idx) => (
-                        <span key={idx} className="text-xs bg-white px-2 py-1 rounded">
-                          {url.split('/').pop()}
-                        </span>
-                      ))}
-                    </div>
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-xs text-blue-700 font-medium mb-2">📷 Galeri saat ini ({existingGallery.length} foto):</p>
+                  <div className="flex flex-wrap gap-3">
+                    {existingGallery.map((url, idx) => (
+                      <div key={idx} className="relative group">
+                        <img src={url} alt="Gallery item" className="w-20 h-20 object-cover rounded-lg border border-slate-200" />
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExistingGalleryImage(url)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
+                          title="Hapus gambar ini"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
 
                 <div className="space-y-3">
                   {gallery.length === 0 ? (
@@ -354,7 +376,29 @@ const EditNews: React.FC = () => {
 
               <div>
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">Konten Berita</label>
-                <textarea rows={12} className="w-full px-6 py-6 bg-slate-50 border border-slate-100 rounded-[2.5rem]" value={content} onChange={(e) => setContent(e.target.value)}></textarea>
+                <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
+                  <ReactQuill
+                    theme="snow"
+                    value={content}
+                    onChange={setContent}
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                        ['link', 'image'],
+                        ['clean']
+                      ],
+                    }}
+                    formats={[
+                      'header',
+                      'bold', 'italic', 'underline', 'strike', 'blockquote',
+                      'list', 'bullet', 'indent',
+                      'link', 'image'
+                    ]}
+                    className="h-96 mb-12"
+                  />
+                </div>
               </div>
             </div>
           </section>
