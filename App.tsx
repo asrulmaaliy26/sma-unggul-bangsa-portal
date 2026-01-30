@@ -24,6 +24,7 @@ import EditProject from './pages/Admin/EditProject';
 import ManageJournals from './pages/Admin/ManageJournals';
 import CreateJournal from './pages/Admin/CreateJournal';
 import EditJournal from './pages/Admin/EditJournal';
+import AdminLogin from './pages/Admin/Login';
 import AdminLayout from './components/AdminLayout';
 import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
 import { getSchoolAssistantResponse } from './services/gemini';
@@ -114,6 +115,7 @@ const App: React.FC = () => {
               <Route path="/contact" element={<Contact />} />
 
               {/* Admin Routes with persistent Sidebar */}
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="news" element={<ManageNews />} />
